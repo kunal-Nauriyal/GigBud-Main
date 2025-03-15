@@ -1,0 +1,167 @@
+/* Full Page Styling */
+.services-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #0a1128;
+    padding: 40px 20px;
+}
+
+/* Header Styling */
+.services-header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.services-title {
+    font-size: 3.2rem;
+    color: white;
+    margin-bottom: 3rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    text-shadow: 2px 2px 12px rgba(255, 255, 255, 0.25);
+}
+
+/* Services Content */
+.services-content {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    gap: 4rem;
+    max-width: 1200px;
+}
+
+/* Image Styling */
+.side-image-container {
+    background: white;
+    padding: 15px;
+    border-radius: 50%;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.side-image-container:hover {
+    transform: scale(1.08);
+    box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.4);
+}
+
+.side-image {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    
+}
+
+/* Role Selection Box */
+.role-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 0px 12px rgba(255, 255, 255, 0.15);
+}
+
+/* Buttons */
+.role-button {
+    background: linear-gradient(90deg, #2dce89, #2b6cb0);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    padding: 15px 50px;
+    margin: 12px;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: 0.3s ease;
+    text-transform: uppercase;
+    box-shadow: 0px 0px 10px rgba(0, 255, 157, 0.3);
+}
+
+.role-button:hover {
+    transform: scale(1.08);
+    background: linear-gradient(90deg, #2b6cb0, #2dce89);
+    box-shadow: 0px 0px 20px rgba(0, 255, 157, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .services-content {
+        flex-direction: column;
+        gap: 40px;
+    }
+
+    .side-image-container {
+        width: 160px;
+        height: 160px;
+        padding: 10px;
+    }
+
+    .side-image {
+        max-width: 140px;
+    }
+
+    .services-title {
+        font-size: 2.8rem;
+    }
+
+    .role-button {
+        font-size: 1.3rem;
+        padding: 14px 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .services-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .side-image-container {
+        width: 140px;
+        height: 140px;
+        padding: 10px;
+    }
+
+    .side-image {
+        max-width: 120px;
+    }
+
+    .services-title {
+        font-size: 2.5rem;
+    }
+
+    .role-button {
+        font-size: 1.2rem;
+        padding: 12px 35px;
+    }
+}
+
+@media (max-width: 480px) {
+    .services-title {
+        font-size: 2rem;
+    }
+
+    .side-image-container {
+        width: 120px;
+        height: 120px;
+        padding: 8px;
+    }
+
+    .side-image {
+        max-width: 100px;
+    }
+
+    .role-button {
+        font-size: 1rem;
+        padding: 10px 30px;
+    }
+}

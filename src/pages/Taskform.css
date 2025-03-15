@@ -1,0 +1,129 @@
+/* Error Styling */
+.input-error {
+    border: 2px solid red !important;
+}
+
+.error-text {
+    color: red;
+    font-size: 0.9rem;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+  
+/* Modal Container */
+.modal-container {
+    background: white;
+    width: 893px; /* Increased width */
+    max-width: 90%;
+    height: 80vh; /* Ensures full height utilization */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+  
+/* Scrollable Form Content */
+.modal-content {
+    background-color: white;
+    width: 56vw;
+    overflow-y: auto;
+    max-height: 65vh;
+    padding: 20px;
+}
+  
+/* Header */
+.modal-header {
+    background: #042aa7;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+}
+  
+/* Close Button */
+.close-button {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: white;
+}
+
+/* Form Styling */
+.task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Grouping Labels and Inputs */
+.task-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Label Styling */
+.task-form label {
+    color: black !important;
+    font-weight: bold;
+    font-size: 1.1rem;
+    padding: 5px;
+    border-radius: 4px;
+    display: block;
+}
+
+/* Input, Select & Textarea Styling */
+.task-form input,
+.task-form textarea,
+.task-form select {
+    padding: 12px;
+    border: 1px solid black;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+    width: 100%;
+    background-color: #f0f0f0;
+}
+
+/* Submit Button */
+.submit-button {
+    width: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #2dce89, #2b6cb0);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: 0.3s;
+}
+
+.submit-button:disabled {
+    background: grey;
+    cursor: not-allowed;
+}
+
+.submit-button:hover {
+    background: linear-gradient(90deg, #2b6cb0, #2dce89);
+}

@@ -1,0 +1,116 @@
+/* Navbar */
+.navbar {
+  background-color: rgba(0, 23, 52, 0.8);
+  padding: 15px 20px;
+  position:relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+/* Hide Navbar on Scroll */
+.navbar-hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+/* Logo */
+.navbar .logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Nav Links */
+.navbar .nav-links {
+  display: flex;
+  list-style: none;
+  gap: 3rem;
+}
+
+.navbar .nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 8px 16px;
+  transition: 0.3s;
+}
+
+/* Active Page Highlight */
+.navbar .nav-link.active {
+  color: #39ff14;
+  font-weight: bold;
+  border-bottom: 2px solid #39ff14;
+  padding-bottom: 5px;
+}
+
+/* Hover Effect */
+.navbar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+}
+
+/* Menu Icon */
+.navbar .menu-icon {
+  display: none;
+  font-size: 30px;
+  color: #39ff14;
+  cursor: pointer;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  background: rgba(0, 23, 52, 0.9);
+  border-radius: 5px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-menu li {
+  list-style: none;
+}
+
+.dropdown-menu .nav-link {
+  display: block;
+  padding: 10px;
+}
+
+/* Ensure Contact Button is Visible */
+.dropdown-menu .nav-link {
+  color: white;
+  font-weight: bold;
+}
+
+.dropdown-menu .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar .nav-links {
+    display: none;
+    flex-direction: column;
+    background-color: #1d2a3a;
+    width: 100%;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    transition: all 0.3s ease;
+  }
+
+  .navbar .nav-links.open {
+    display: flex;
+  }
+
+  .navbar .menu-icon {
+    display: block;
+  }
+}

@@ -1,0 +1,80 @@
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Ensure full-page layout */
+html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow-x: hidden; /* Prevents horizontal scroll issues */
+}
+
+/* Full-screen container */
+.home-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    background: url('../assets/images/back.jpg') no-repeat center center/cover;
+    text-align: center;
+    padding: 0 20px; /* Ensures spacing on smaller screens */
+}
+
+/* Main Heading */
+.main-heading {
+    font-size: 12rem; /* Optimized for better scaling */
+    font-weight: 900;
+    color: white;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    text-shadow: 0 5px 20px rgba(255, 255, 255, 0.7); /* Soft glow effect */
+}
+
+/* Tagline Styling */
+.tagline {
+    font-size: 2rem;
+    font-weight: 600;
+    color: white;
+    background: rgba(0, 0, 0, 0.6); /* Improved contrast */
+    padding: 12px 25px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 80%;
+    line-height: 1.6;
+    letter-spacing: 1px;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .main-heading {
+        font-size: 9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-heading {
+        font-size: 6rem;
+    }
+
+    .tagline {
+        font-size: 1.8rem;
+        max-width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-heading {
+        font-size: 4rem;
+    }
+
+    .tagline {
+        font-size: 1.4rem;
+        padding: 10px 15px;
+    }
+}

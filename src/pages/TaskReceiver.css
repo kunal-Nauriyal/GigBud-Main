@@ -1,0 +1,88 @@
+/* Full Page Styling */
+.task-receiver-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #0a1128;
+    padding: 40px 20px;
+}
+
+/* Header Styling */
+.task-receiver-header {
+    margin-bottom: 30px;
+}
+
+.task-receiver-title {
+    font-size: 3.5rem;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Task Receiver Content */
+.task-receiver-content {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    gap: 3rem;
+}
+
+/* Boxes */
+.task-receiver-box {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    width: 40%;
+    color: white;
+    font-size: 1.3rem;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Buttons */
+.task-receiver-btn {
+    display: inline-block;
+    background: linear-gradient(90deg, #2dce89, #2b6cb0);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    padding: 15px 40px;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: 0.3s;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0px 0px 10px rgba(0, 255, 157, 0.3);
+}
+
+.task-receiver-btn:hover {
+    transform: scale(1.1);
+    background: linear-gradient(90deg, #2b6cb0, #2dce89);
+    box-shadow: 0px 0px 15px rgba(0, 255, 157, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .task-receiver-content {
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .task-receiver-box {
+        width: 80%;
+        font-size: 1.1rem;
+    }
+
+    .task-receiver-btn {
+        font-size: 1.2rem;
+        padding: 12px 25px;
+    }
+}
