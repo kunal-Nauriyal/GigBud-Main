@@ -1,0 +1,124 @@
+.about-section {
+    padding: 6rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .about-section::before {
+    content: '';
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(100, 255, 218, 0.03);
+    top: -100px;
+    left: -100px;
+    z-index: -1;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  .about-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+  
+  .about-image {
+    position: relative;
+  }
+  
+  .about-image::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--neon-green);
+    top: 20px;
+    left: 20px;
+    z-index: -1;
+    border-radius: 4px;
+  }
+  
+  .about-image img {
+    width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(2, 12, 27, 0.7);
+  }
+  
+  .about-text h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: black;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  
+  .about-text h2::after {
+    content: '';
+    position: absolute;
+    width: 70px;
+    height: 4px;
+    background-color: var(--neon-green);
+    bottom: -10px;
+    left: 0;
+  }
+  
+  .about-text p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .about-text strong {
+    color: var(--neon-green);
+    font-weight: 600;
+  }
+  
+  .learn-more-btn {
+    background-color: transparent;
+    border: 1px solid var(--neon-green);
+    color: var(--neon-green);
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    margin-top: 1rem;
+  }
+  
+  .learn-more-btn:hover {
+    background-color: rgba(100, 255, 218, 0.1);
+    transform: translateY(-3px);
+  }
+  
+  /* Alternate layout for even-numbered sections */
+  .about-section:nth-of-type(even) .about-content {
+    grid-template-columns: 1fr 1fr;
+    direction: rtl;
+  }
+  
+  .about-section:nth-of-type(even) .about-content > * {
+    direction: ltr;
+  }
+  
+  /* Media queries */
+  @media (max-width: 968px) {
+    .about-content {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .about-section:nth-of-type(even) .about-content {
+      grid-template-columns: 1fr;
+    }
+    
+    .about-image::after {
+      display: none;
+    }
+  }

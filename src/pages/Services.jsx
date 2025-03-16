@@ -4,6 +4,7 @@ import "./Services.css";
 import leftImage from "/src/assets/images/rightsideman1.jpeg"; // Swapped
 import rightImage from "/src/assets/images/leftsideman.jpeg"; // Swapped
 
+
 const Services = () => {
   return (
     <section className="services-container">
@@ -29,6 +30,7 @@ const Services = () => {
         <img src={leftImage} alt="Task Receiver" className="side-image right-image" />
       </div>
     </section>
+    
   );
 };
 

@@ -33,26 +33,13 @@ const Navbar = () => {
           <Link to="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>Home</Link>
         </li>
         <li>
-          <Link to="/about" className={`nav-link ${location.pathname === "/about" ? "active" : ""}`}>About</Link>
+        <Link to="/about" className={`nav-link ${location.pathname === "/about" ? "active" : ""}`}>About</Link>
+
         </li>
         <li>
           <Link to="/services" className={`nav-link ${location.pathname === "/services" ? "active" : ""}`}>Services</Link>
         </li>
-        <li>
-          <Link to="/task-provider-dashboard" className={`nav-link ${location.pathname === "/task-provider-dashboard" ? "active" : ""}`}>
-            Provider Dashboard
-          </Link>
-        </li>
-        <li>
-          <Link to="/time-buyer-dashboard" className={`nav-link ${location.pathname === "/time-buyer-dashboard" ? "active" : ""}`}>
-            Time Buyer Dashboard
-          </Link>
-        </li>
-        <li>
-          <Link to="/task-receiver-dashboard" className={`nav-link ${location.pathname === "/task-receiver-dashboard" ? "active" : ""}`}>
-            Task Receiver Dashboard
-          </Link>
-        </li>
+       
       </ul>
 
       <div className="menu-container">

@@ -30,7 +30,7 @@
 .navbar .nav-links {
   display: flex;
   list-style: none;
-  gap: 3rem;
+  gap: 7rem;
 }
 
 .navbar .nav-link {

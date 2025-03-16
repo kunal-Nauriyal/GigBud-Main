@@ -1,7 +1,9 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import DashboardNavbar from "./components/DashboardNavbar";
 import Home from "./pages/Home";
+import About from "./pages/About";
 import Services from "./pages/Services";
 import TaskProvider from "./pages/TaskProvider"; // Task Provider Page
 import TaskProviderDashboard from "./pages/TaskProviderDashboard"; // Task Provider Dashboard
@@ -16,9 +18,11 @@ function App() {
     <BrowserRouter>
       <div className="app-container">
         <Navbar />
+        <DashboardNavbar />
         <main className="content">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/About" element={<About />} />
             <Route path="/services" element={<Services />} />
             <Route path="/task-provider" element={<TaskProvider />} />
             <Route path="/task-provider-dashboard" element={<TaskProviderDashboard />} />
