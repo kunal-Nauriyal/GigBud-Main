@@ -6,11 +6,12 @@
     gap: 20px;
     padding: 20px;
     background-color: #f4f4f4;
+    position: relative; /* For positioning the toggle button */
 }
 
 /* Dashboard Heading */
 .Headline {
-    font-size: 2.3rem;
+    font-size: 2rem;
     display: block;
     color: white;
     font-weight: bold;
@@ -19,19 +20,44 @@
     letter-spacing: 1.5px;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
     padding: 25px;
+    margin: 0;
+    text-align: center;
+}
+
+/* Task List Toggle Button (for mobile) */
+.task-list-toggle {
+    display: none; /* Hidden by default (for desktop) */
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgb(6, 8, 94);
+    color: white;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    padding: 15px 10px;
+    font-size: 1.2rem;
+    z-index: 10;
+    cursor: pointer;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
 }
 
 /* Task List */
 .task-list {
-    height: 100vh;
-    width: 30rem;
+    height: calc(100vh - 100px);
+    width: 30rem !important;
     background: white;
     padding: 15px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Aligns Create Task button to the bottom */
+    transition: transform 0.3s ease;
+}
+
+.task-cards-container {
+    flex-grow: 1;
+    overflow-y: auto;
 }
 
 /* Task List Header */
@@ -43,15 +69,15 @@
 }
 
 .task-header h2 {
-    font-size: xx-large;
-   
+    font-size: 1.8rem;
+    margin: 0;
 }
 
 /* Task Card */
 .task-card {
     background: #e8f0fe;
-    padding: 10px;
-    font-size: larger;
+    padding: 15px;
+    font-size: 1rem;
     margin: 10px 0;
     border-radius: 5px;
     cursor: pointer;
@@ -60,6 +86,7 @@
 
 .task-card.selected {
     background: #bbdefb;
+    border-left: 4px solid #007bff;
 }
 
 .task-card:hover {
@@ -68,31 +95,40 @@
 
 /* Task Details */
 .task-details {
-    margin-right: 25px;
-    width: 65rem;
-    font-size: 1.6rem;
+    flex: 1;
+    width: 60rem;
     background: white;
-    padding: 15px;
+    padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    height: calc(100vh );
 }
 
 .task-details h2 {
-    font-size: xx-large;
-    margin-bottom: 25px;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    color: rgb(6, 8, 94);
 }
 
-/* Create Task Button (Placed at Bottom) */
+.task-title {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e8f0fe;
+    padding-bottom: 10px;
+}
+
+/* Create Task Button */
 .create-task-button {
     background: #28a745;
     color: white;
     border: none;
-    padding: 10px 15px;
+    padding: 12px 15px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 1rem;
-    width: 100%;
-    margin-top: auto;
+    margin-top: 15px;
+    transition: background 0.3s;
 }
 
 .create-task-button:hover {
@@ -104,10 +140,9 @@
     background: #007bff;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 8px 15px;
     cursor: pointer;
     border-radius: 5px;
-    margin-left: 15px;
 }
 
 .filter-button:hover {
@@ -115,15 +150,40 @@
 }
 
 /* Applicants Section */
+.applicants-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 .applicant-card {
     display: flex;
-    font-size: 1.3rem;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     background: #f9f9f9;
     padding: 15px;
-    margin: 25px 0;
     border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.applicant-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.applicant-details {
+    flex: 1;
+}
+
+.applicant-name {
+    font-size: 1.2rem;
+    margin: 0 0 5px 0;
+}
+
+.applicant-meta, .applicant-price {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
 }
 
 .Applicants {
@@ -134,27 +194,39 @@
     padding: 9px;
 }
 
-.applicant-info {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-}
-
 .profile-pic-placeholder {
-    width: 100px;
-    height: 100px;
+    width: 60px;
+    height: 60px;
     background: #ccc;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
+    flex-shrink: 0;
 }
 
 .rating {
     font-size: 1rem;
     font-weight: bold;
     color: #ffb400;
+    margin-top: 5px;
+}
+
+.chat-button {
+    width: 100%;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.chat-button:hover {
+    background: #0056b3;
 }
 
 /* Filter Modal Overlay */
@@ -164,27 +236,31 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Background overlay */
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 100;
 }
 
 /* Filter Modal Content */
 .filter-content {
     background: white;
     width: 350px;
+    max-width: 90%;
     padding: 20px;
     border-radius: 8px;
     text-align: center;
     position: relative;
     box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
 }
+
 .filter-content h3 {
     font-size: 1.5rem;
     font-weight: bold;
     margin-bottom: 15px;
 }
+
 .filter-content button {
     display: block;
     width: 90%;
@@ -197,37 +273,154 @@
     cursor: pointer;
     border-radius: 5px;
 }
+
 .filter-content button:hover {
     background: #0056b3;
 }
 
-.close-button-close{
-  position: relative;
- bottom: 93px;
- right: 40px;
-  
-    background-color: white;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    
-    border-radius: 50%;
-}
 /* Close Button */
 .close-button {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: red;
-    color: white;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 50%;
+    background: #dc3545 !important;
+    margin-top: 15px !important;
 }
 
 .close-button:hover {
-    background: darkred;
+    background: #c82333 !important;
 }
 
+/* Task Form Modal */
+.task-form-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+/* Task Form Modal Content */
+.task-form-content {
+    background: white;
+    width: 600px;
+    max-width: 90%;
+    max-height: 90vh;
+    padding: 20px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+}
+
+/* Media Queries for Responsive Design */
+@media screen and (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+        padding: 10px;
+    }
+    
+    .Headline {
+        font-size: 1.5rem;
+        padding: 15px;
+    }
+    
+    .task-list-toggle {
+        display: block;
+    }
+    
+    .task-list {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 80%;
+        max-width: 300px;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .task-list.show {
+        transform: translateX(0);
+    }
+    
+    .task-list.hide {
+        transform: translateX(-100%);
+    }
+    
+    .task-details {
+        width: 100%;
+        margin-left: 0;
+        padding: 15px;
+        height: auto;
+    }
+    
+    .task-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .applicant-card {
+        flex-direction: column;
+    }
+    
+    .applicant-info {
+        flex-direction: row;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .chat-button {
+        width: 100%;
+    }
+    
+    .profile-pic-placeholder {
+        width: 50px;
+        height: 50px;
+    }
+
+    /* Fixed issue with filter modal on mobile */
+    .filter-content {
+        width: 90%;
+        max-width: 300px;
+        padding: 15px;
+    }
+    
+    .close-button {
+        top: 5px;
+        right: 10px;
+        font-size: 1rem;
+        padding: 3px 8px;
+    }
+}
+
+/* Tablet Specific Styles */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+    .task-list {
+        width: 40%;
+    }
+    
+    .task-details {
+        width: 60%;
+    }
+    
+    .profile-pic-placeholder {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .applicant-info {
+        gap: 10px;
+    }
+}
+
+/* Animation for modals */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.filter-modal, .task-form-modal {
+    animation: fadeIn 0.3s ease;
+}

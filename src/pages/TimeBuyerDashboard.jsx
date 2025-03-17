@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./TimeBuyerDashboard.css";
 import BuyingTimeForm from "./BuyingTimeForm"; // Import the Buying Time Form
 
@@ -34,11 +34,25 @@ const TimeBuyerDashboard = () => {
     },
   ]);
 
-  const [selectedBooking, setSelectedBooking] = useState(null); // State to track selected booking
-  const [showForm, setShowForm] = useState(false); // Modal state
-  const [showFilters, setShowFilters] = useState(false); // Filter modal state
+  const [selectedBooking, setSelectedBooking] = useState(timeBookings[0] || null);
+  const [showForm, setShowForm] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Function to handle new time booking submission
+  const [showBookingList, setShowBookingList] = useState(window.innerWidth > 768);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setShowBookingList(window.innerWidth > 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const toggleBookingList = () => {
+    setShowBookingList(!showBookingList);
+  };
+
   const handleFormSubmit = (newBooking) => {
     setTimeBookings([...timeBookings, { id: timeBookings.length + 1, ...newBooking }]);
     setShowForm(false);
@@ -49,32 +63,48 @@ const TimeBuyerDashboard = () => {
       <h1 className="Headline">Time Buyer Dashboard</h1>
 
       <div className="dashboard-container">
-        {/* Left Side - Time Bookings List */}
-        <div className="task-list">
+        {/* Toggle Button (Mobile) */}
+        <button 
+          className="task-list-toggle"
+          onClick={toggleBookingList}
+          aria-label={showBookingList ? "Hide Booking List" : "Show Booking List"}
+        >
+          {showBookingList ? "←" : "→"}
+        </button>
+
+        {/* Booking List */}
+        <div className={`task-list ${showBookingList ? "show" : "hide"}`}>
           <div className="task-header">
             <h2>Your Bookings</h2>
             <button className="filter-button" onClick={() => setShowFilters(true)}>Filters</button>
           </div>
 
-          {timeBookings.map((booking) => (
-            <div 
-              key={booking.id} 
-              className={`task-card ${selectedBooking?.id === booking.id ? "selected" : ""}`}
-              onClick={() => setSelectedBooking(booking)}
-            >
-              <h3>{booking.jobType}</h3>
-              <p><strong>Buyer:</strong> {booking.buyer}</p>
-              <p><strong>Hours:</strong> {booking.hours}</p>
-              <p><strong>Mode:</strong> {booking.workMode}</p>
-              {booking.location && <p><strong>Location:</strong> {booking.location}</p>}
-              <p><strong>Budget per Hour:</strong> ₹{booking.budgetPerHour}</p>
-            </div>
-          ))}
+          <div className="task-cards-container">
+            {timeBookings.map((booking) => (
+              <div 
+                key={booking.id} 
+                className={`task-card ${selectedBooking?.id === booking.id ? "selected" : ""}`}
+                onClick={() => {
+                  setSelectedBooking(booking);
+                  if (window.innerWidth <= 768) {
+                    setShowBookingList(false);
+                  }
+                }}
+              >
+                <h3>{booking.jobType}</h3>
+                <p><strong>Buyer:</strong> {booking.buyer}</p>
+                <p><strong>Hours:</strong> {booking.hours}</p>
+                <p><strong>Mode:</strong> {booking.workMode}</p>
+                {booking.location && <p><strong>Location:</strong> {booking.location}</p>}
+                <p><strong>Budget per Hour:</strong> ₹{booking.budgetPerHour}</p>
+              </div>
+            ))}
+          </div>
 
           <button className="create-task-button" onClick={() => setShowForm(true)}>+ Book Time</button>
         </div>
 
-        {/* Right Side - Booking Details */}
+        {/* Booking Details */}
         <div className="task-details">
           <h2>Booking Details</h2>
           {selectedBooking ? (
@@ -86,7 +116,6 @@ const TimeBuyerDashboard = () => {
               {selectedBooking.location && <p><strong>Location:</strong> {selectedBooking.location}</p>}
               <p><strong>Budget per Hour:</strong> ₹{selectedBooking.budgetPerHour}</p>
 
-              {/* Applicants Section */}
               <h3>Applicants</h3>
               {selectedBooking.applicants.length > 0 ? (
                 selectedBooking.applicants.map((applicant) => (
@@ -96,7 +125,8 @@ const TimeBuyerDashboard = () => {
                     <p>Proposed Price: ₹{applicant.price}</p>
                     <button 
                       className="chat-button" 
-                      onClick={() => alert("This feature will be available in a future update.")}>
+                      onClick={() => alert("This feature will be available in a future update.")}
+                    >
                       Chat
                     </button>
                   </div>
@@ -128,8 +158,8 @@ const TimeBuyerDashboard = () => {
             <button onClick={() => setTimeBookings([...timeBookings].sort((a, b) => a.hours - b.hours))}>Sort by Hours</button>
             <button onClick={() => setTimeBookings([...timeBookings].sort((a, b) => a.budgetPerHour - b.budgetPerHour))}>Price: Low to High</button>
             <button onClick={() => setTimeBookings([...timeBookings].sort((a, b) => b.budgetPerHour - a.budgetPerHour))}>Price: High to Low</button>
+            <button className="close-button" onClick={() => setShowFilters(false)}>Close</button>
           </div>
-          <button className="close-button-close" onClick={() => setShowFilters(false)}>❌</button>
         </div>
       )}
     </div>
