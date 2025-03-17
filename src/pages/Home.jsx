@@ -15,7 +15,7 @@ const Home = () => {
         <p className="tagline">A Place where Buying Time is Easy</p>
         
         <div className="hero-buttons">
-          <Link to="/task-provider" className="btn primary-btn">Get Started</Link>
+          <Link to="/login" className="btn primary-btn">Get Started</Link>
          
         </div>
       </div>

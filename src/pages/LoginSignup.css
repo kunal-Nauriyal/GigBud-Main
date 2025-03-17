@@ -1,0 +1,288 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Modal overlay */
+.login-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(10, 15, 44, 0.8); /* Semi-transparent dark background */
+  backdrop-filter: blur(10px); /* This creates the blur effect */
+  -webkit-backdrop-filter: blur(10px); /* For Safari */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other content */
+  animation: fadeIn 0.3s ease;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  background-color: #121A3A;
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(0, 255, 191, 0.5);
+  position: relative;
+  overflow: hidden;
+  animation: scaleIn 0.4s ease;
+  z-index: 1001;
+}
+
+/* Optional: Add a close button */
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  color: #8ABAD3;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  color: #00E676;
+  transform: scale(1.1);
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(0, 255, 191, 0.6);
+}
+
+.tagline {
+  font-size: 0.9rem;
+  color: #8ABAD3;
+  margin-top: 5px;
+  margin-left: 31px;
+  font-weight: 300;
+}
+
+.form-container {
+  position: relative;
+}
+
+.form {
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.form-hidden {
+  display: none;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.input-group label {
+  display: block;
+  color: #8ABAD3;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.input-field {
+  width: 100%;
+  background-color: #1C274C;
+  border: none;
+  outline: none;
+  padding: 15px;
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.input-field::placeholder {
+  color: #8ABAD3;
+}
+
+.input-field:focus {
+  box-shadow: 0 0 10px rgba(0, 255, 191, 0.6);
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #8ABAD3;
+  border-radius: 4px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox.checked {
+  border-color: #00E676;
+  background-color: rgba(0, 230, 118, 0.1);
+}
+
+.custom-checkbox.checked::after {
+  content: '✓';
+  color: #00E676;
+  font-size: 14px;
+}
+
+.checkbox-label {
+  color: #8ABAD3;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgot-password a {
+  color: #8ABAD3;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.forgot-password a:hover {
+  color: #00E676;
+  text-shadow: 0 0 5px rgba(0, 255, 191, 0.6);
+}
+
+.btn {
+  width: 100%;
+  background-color: #00E676;
+  color: #0A0F2C;
+  border: none;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.btn:hover {
+  background-color: #00FFBF;
+  box-shadow: 0 0 15px rgba(0, 255, 191, 0.8);
+}
+
+.switch-form {
+  text-align: center;
+  color: #8ABAD3;
+  font-size: 0.9rem;
+}
+
+.switch-form a {
+  color: #8ABAD3;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-left: 5px;
+}
+
+.switch-form a:hover {
+  color: #00E676;
+  text-decoration: underline;
+  text-shadow: 0 0 5px rgba(0, 255, 191, 0.6);
+}
+
+.social-login {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.social-login p {
+  color: #8ABAD3;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.social-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #1C274C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+  background-color: #253366;
+  box-shadow: 0 0 10px rgba(0, 255, 191, 0.4);
+}
+
+.social-icon img {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+/* Animation for form switching */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Hide modal by default */
+.modal-hidden {
+  display: none;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 480px) {
+  .login-box {
+    max-width: 90%;
+    padding: 30px 20px;
+  }
+  
+  .logo {
+    font-size: 2rem;
+  }
+  
+  .input-field {
+    padding: 12px;
+  }
+  
+  .btn {
+    padding: 12px;
+  }
+}

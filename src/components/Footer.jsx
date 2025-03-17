@@ -17,25 +17,19 @@ const Footer = () => {
               <li><a href="/">Home</a></li>
               <li><a href="/about">About</a></li>
               <li><a href="/services">Services</a></li>
-              <li><a href="/provider-dashboard">Provider Dashboard</a></li>
+            
             </ul>
           </div>
 
-          <div className="footer-links-column">
-            <h3>Dashboards</h3>
-            <ul>
-              <li><a href="/time-buyer-dashboard">Time Buyer Dashboard</a></li>
-              <li><a href="/task-receiver-dashboard">Task Receiver Dashboard</a></li>
-              <li><a href="/contact">Contact Us</a></li>
-              <li><a href="/faqs">FAQs</a></li>
-            </ul>
-          </div>
+    
 
           <div className="footer-links-column">
             <h3>Legal</h3>
             <ul>
               <li><a href="/privacy-policy">Privacy Policy</a></li>
-              <li><a href="/terms-of-service">Terms of Service</a></li>
+                          <li><a href="/terms-of-service">Terms of Service</a></li>
+                          <li><a href="/contact">Contact Us</a></li>
+                          <li><a href="/faqs">FAQs</a></li>
             </ul>
           </div>
 

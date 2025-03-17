@@ -2,9 +2,8 @@
 
 .dashboard-navbar {
     
-    background-color: #0a0f24; /* Dark Blue */
-    padding: 1rem 2rem;
-    clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%);
+    background-color: rgba(38, 39, 41, 0.8);
+    padding: 1rem 2rem;   
     display: flex;
     justify-content: center;
     box-shadow: 0 4px 8px rgba(57, 255, 20, 0.2); /* Neon Green glow */
@@ -13,13 +12,14 @@
   .dashboard-nav-links {
     list-style: none;
     display: flex;
-    gap: 2rem;
+    gap: 12rem;
     margin: 0;
     padding: 0;
   }
   
   .dashboard-link {
     color: rgb(255, 255, 255);
+    
     font-weight: 500;
     text-decoration: none;
     transition: color 0.3s ease, border-bottom 0.3s ease;

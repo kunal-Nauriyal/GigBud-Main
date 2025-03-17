@@ -1,8 +1,8 @@
 /* Navbar */
 .navbar {
-  background-color: rgba(0, 23, 52, 0.8);
+  background-color: rgba(38, 39, 41, 0.926);
   padding: 15px 20px;
-  position:relative;
+  position: relative;
   top: 0;
   left: 0;
   right: 0;
@@ -30,7 +30,8 @@
 .navbar .nav-links {
   display: flex;
   list-style: none;
-  gap: 7rem;
+  gap: 8rem;
+  margin-left: 135px;
 }
 
 .navbar .nav-link {
@@ -81,16 +82,35 @@
 .dropdown-menu .nav-link {
   display: block;
   padding: 10px;
-}
-
-/* Ensure Contact Button is Visible */
-.dropdown-menu .nav-link {
   color: white;
   font-weight: bold;
 }
 
 .dropdown-menu .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgb(1, 1, 1);
+}
+
+/* Login Button */
+.navbar .login-button {
+  color: rgb(0, 0, 0);
+ 
+  border-radius: 5px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+.navbar .login-button:hover {
+  background-color: #6cd598d6;
+}
+
+.nav-link-login{
+  background-color: #2ecc71 ;
+  padding: 8px;
+}
+.nav-link-login:hover{
+  background-color: #8fdeb0 ;
+  font-size: 1rem;
+  padding: 8px;
+  border-radius: 25%;
 }
 
 /* Responsive Design */

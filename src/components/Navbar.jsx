@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
-const Navbar = () => {
+const Navbar = ({ openLoginModal }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrollingDown, setScrollingDown] = useState(false);
   const location = useLocation(); // Get the current route
@@ -33,13 +33,11 @@ const Navbar = () => {
           <Link to="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>Home</Link>
         </li>
         <li>
-        <Link to="/about" className={`nav-link ${location.pathname === "/about" ? "active" : ""}`}>About</Link>
-
+          <Link to="/about" className={`nav-link ${location.pathname === "/about" ? "active" : ""}`}>About</Link>
         </li>
         <li>
           <Link to="/services" className={`nav-link ${location.pathname === "/services" ? "active" : ""}`}>Services</Link>
         </li>
-       
       </ul>
 
       <div className="menu-container">
@@ -51,6 +49,11 @@ const Navbar = () => {
             </li>
           </ul>
         )}
+      </div>
+      
+      {/* Login Button - Changed to button that triggers modal */}
+      <div className="login-button">
+        <button onClick={openLoginModal} className="nav-link-login">Login</button>
       </div>
     </nav>
   );
