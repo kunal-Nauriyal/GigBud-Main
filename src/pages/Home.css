@@ -49,7 +49,7 @@ html, body {
 .tagline {
     font-size: 2rem;
     font-weight: 600;
-    color: white;
+    color: white !important;
     background: rgba(0, 0, 0, 0.6); /* Improved contrast */
     padding: 12px 25px;
     border-radius: 10px;
@@ -173,6 +173,7 @@ html, body {
     .tagline {
         font-size: 1.8rem;
         max-width: 90%;
+        color: white;
     }
     
     .hero-buttons {

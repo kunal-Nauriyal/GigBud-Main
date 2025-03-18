@@ -1,0 +1,220 @@
+/* Container for GigBud Advantages and Info Clouds */
+.info-container {
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  position: relative;
+  
+}
+
+.popular-tasks-container{
+  background-color: white;
+}
+
+/* Centered Section Title with Icon */
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 55px;
+  font-weight: bold;
+  text-align: center;
+  color: #333;
+  margin: 10px 20px;
+  margin-bottom: 15px;
+  position: relative;
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Add an icon before the heading */
+.section-title::before {
+  content: "⭐";  /* Star icon for emphasis */
+  font-size: 45px;
+  margin-right: 10px;
+}
+
+/* Add a decorative line below the heading */
+.section-title::after {
+  content: "";
+  width: 150px;
+  height: 5px;
+  background: linear-gradient(to right, #ff9a8b, #fd8bff, #8b9aff);
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 5px;
+}
+
+/* Cloud-style paragraph design */
+.info-cloud {
+  max-width: 48%;
+  background: #e0eafc;
+  padding: 15px 25px;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: 500;
+  margin-top: 85px;
+  color: #333;
+  text-align: center;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s;
+}
+
+/* Hover effect to make clouds pop */
+.info-cloud:hover {
+  transform: scale(1.05);
+  background: #d6e4ff;
+  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* Left cloud positioning */
+.left-cloud {
+  position: absolute;
+  left: 0%;
+  top: 66px;
+}
+
+/* Right cloud positioning */
+.right-cloud {
+  position: absolute;
+ right: 0%;
+  top: 66px;
+}
+
+/* Grid Layout */
+.popular-tasks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  gap: 70px;
+  padding: 20px;
+  margin-top: 245px;
+  justify-items: center;
+}
+
+/* Task Card Styling */
+.task {
+  position: relative;
+  background: rgba(137, 137, 137, 0.9); /* Slight transparency */
+  overflow: hidden;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 270px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 10px;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Task hover effect */
+.task:hover {
+  transform: scale(1.08);
+  font-size: 20px;
+  box-shadow: 0 12px 24px rgba(255, 160, 122, 0.5);
+}
+
+/* Task Images */
+.task img {
+  width: 100%;
+  height: 220px; /* Consistent image size */
+  object-fit: cover;
+  border-radius: 15px 15px 0 0;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+/* Hover effect on images */
+.task:hover img {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Show More Button */
+.button-container {
+  text-align: center;
+  margin-top: 30px;
+ margin-bottom: 15px;
+}
+
+.show-more-btn {
+  padding: 12px 24px;
+  margin-bottom: 50px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(to right, #ffffff, #000000);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out, transform 0.2s, box-shadow 0.3s ease-in-out;
+}
+
+/* Hover effect for button */
+.show-more-btn:hover {
+  background: linear-gradient(to right, #000000, #ffffff);
+  transform: scale(1.08);
+  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .popular-tasks {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .info-cloud {
+    max-width: 40%;
+    font-size: 16px;
+  }
+
+  .left-cloud {
+    left: 8%;
+  }
+
+  .right-cloud {
+    right: 8%;
+  }
+}
+
+@media (max-width: 768px) {
+  .popular-tasks {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-cloud {
+    max-width: 45%;
+    font-size: 14px;
+  }
+
+  .left-cloud, .right-cloud {
+    left: auto;
+    right: auto;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .popular-tasks {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  .info-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .info-cloud {
+    max-width: 80%;
+    margin-bottom: 10px;
+  }
+
+  .left-cloud, .right-cloud {
+    position: static;
+    text-align: center;
+  }
+}

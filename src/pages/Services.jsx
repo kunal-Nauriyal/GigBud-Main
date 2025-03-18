@@ -1,37 +1,27 @@
-import React from "react";
-import { Link } from "react-router-dom"; // Import Link for navigation
-import "./Services.css";
-import leftImage from "/src/assets/images/rightsideman1.jpeg"; // Swapped
-import rightImage from "/src/assets/images/leftsideman.jpeg"; // Swapped
+import styles from "./Services.module.css";
+import Tasks from "../pages/PopularTasks";
 
 
-const Services = () => {
+export default function Services() {
   return (
-    <section className="services-container">
-      {/* Header Section */}
-      <div className="services-header">
-        <h2 className="services-title">Choose Your Role</h2>
-      </div>
-
-      {/* Services Selection */}
-      <div className="services-content">
-        <img src={rightImage} alt="Task Provider" className="side-image left-image" />
-
-        {/* Central Buttons */}
-        <div className="role-selection">
-          <Link to="/task-provider" className="role-button top-button">
-            I’m a Task Provider
-          </Link>
-          <Link to="/task-receiver" className="role-button bottom-button">
-            I’m a Task Receiver
-          </Link>
+    <div className={styles.services}>
+      <h1>Our Services</h1>
+      <div className={styles.serviceGrid}>
+        <div className={styles.serviceCard}>
+          <h2>Task Posting</h2>
+          <p>Post tasks and find the right person to get the job done.</p>
         </div>
-
-        <img src={leftImage} alt="Task Receiver" className="side-image right-image" />
+        <div className={styles.serviceCard}>
+          <h2>Task Completion</h2>
+          <p>Complete tasks and earn money in your free time.</p>
+        </div>
+        <div className={styles.serviceCard}>
+          <h2>Secure Payments</h2>
+          <p>All payments are handled securely through our platform.</p>
+        </div>
       </div>
-    </section>
-    
+      <Tasks />
+     
+    </div>
   );
-};
-
-export default Services;
+}
