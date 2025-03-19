@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
@@ -7,6 +7,8 @@ const Navbar = ({ openLoginModal, isLoggedIn, handleLogout }) => {
   const [scrollingDown, setScrollingDown] = useState(false);
   const [showAuthDropdown, setShowAuthDropdown] = useState(false);
   const location = useLocation();
+  const authDropdownRef = useRef(null);
+  const menuRef = useRef(null);
 
   // Determine if we're on a dashboard page
   const isDashboardPage = location.pathname.includes("dashboard");
@@ -19,6 +21,25 @@ const Navbar = ({ openLoginModal, isLoggedIn, handleLogout }) => {
     setShowAuthDropdown(!showAuthDropdown);
   };
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close auth dropdown if clicked outside
+      if (authDropdownRef.current && !authDropdownRef.current.contains(event.target)) {
+        setShowAuthDropdown(false);
+      }
+
+      // Close mobile menu if clicked outside
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Handle scroll events
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -37,9 +58,9 @@ const Navbar = ({ openLoginModal, isLoggedIn, handleLogout }) => {
         <Link to="/" className="nav-link">GigBud</Link>
       </div>
 
-      {/* Center nav links */}
+      {/* Center nav links (desktop only) */}
       <div className="center-nav">
-        <ul className={`nav-links ${isOpen ? "open" : ""}`}>
+        <ul className="nav-links">
           <li>
             <Link to="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>Home</Link>
           </li>
@@ -49,37 +70,40 @@ const Navbar = ({ openLoginModal, isLoggedIn, handleLogout }) => {
           <li>
             <Link to="/services" className={`nav-link ${location.pathname === "/services" ? "active" : ""}`}>Services</Link>
           </li>
-          <li>
-            <Link to="/contact" className={`nav-link ${location.pathname === "/contact" ? "active" : ""}`}>Contact Us</Link>
-          </li>
+         
         </ul>
       </div>
 
       {/* Right corner menu */}
       <div className="right-nav">
-        {/* Mobile menu toggle */}
-        <div className="mobile-menu">
-          <div className="menu-icon" onClick={toggleMenu}>&#8942;</div>
+        {/* Mobile hamburger menu toggle - ONLY for navigation links */}
+        <div className="mobile-menu" ref={menuRef}>
+          <div className="hamburger-menu" onClick={toggleMenu}>
+            <span className={`hamburger-line ${isOpen ? "open" : ""}`}></span>
+            <span className={`hamburger-line ${isOpen ? "open" : ""}`}></span>
+            <span className={`hamburger-line ${isOpen ? "open" : ""}`}></span>
+          </div>
+          
           {isOpen && (
-            <ul className="dropdown-menu">
-              <li>
-                <Link to="/" className={`nav-link ${location.pathname === "/" ? "active" : ""}`}>Home</Link>
-              </li>
-              <li>
-                <Link to="/about" className={`nav-link ${location.pathname === "/about" ? "active" : ""}`}>About</Link>
-              </li>
-              <li>
-                <Link to="/services" className={`nav-link ${location.pathname === "/services" ? "active" : ""}`}>Services</Link>
-              </li>
-              <li>
-                <Link to="/contact" className={`nav-link ${location.pathname === "/contact" ? "active" : ""}`}>Contact Us</Link>
-              </li>
-            </ul>
+            <div className="mobile-dropdown-menu">
+              <ul>
+                <li>
+                  <Link to="/" className={`mobile-nav-link ${location.pathname === "/" ? "active" : ""}`} onClick={() => setIsOpen(false)}>Home</Link>
+                </li>
+                <li>
+                  <Link to="/about" className={`mobile-nav-link ${location.pathname === "/about" ? "active" : ""}`} onClick={() => setIsOpen(false)}>About</Link>
+                </li>
+                <li>
+                  <Link to="/services" className={`mobile-nav-link ${location.pathname === "/services" ? "active" : ""}`} onClick={() => setIsOpen(false)}>Services</Link>
+                </li>
+               
+              </ul>
+            </div>
           )}
         </div>
         
-        {/* Login/Signup buttons */}
-        <div className="auth-container">
+        {/* Login/Signup buttons (both desktop and mobile) */}
+        <div className="auth-container" ref={authDropdownRef}>
           {isDashboardPage ? (
             <button onClick={handleLogout} className="auth-button">Logout</button>
           ) : (

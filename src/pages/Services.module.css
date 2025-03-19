@@ -1,60 +1,278 @@
-.services {
-  padding: 8rem;  
-    max-width: 100vw;
-    margin: 6px;
+/* --- General Container --- */
+.servicesContainer {
+  padding: 100px 20px 0px;
+  background-color: #0a1128;
+  color: white;
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+/* --- Hero Section --- */
+.heroSection {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.servicesTitle {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #39ff14;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 10px rgba(57, 255, 20, 0.3);
+  margin-bottom: 20px;
+}
+
+.servicesSubtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* --- Services Grid --- */
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto 80px;
+}
+
+.serviceCard {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 30px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+}
+
+.serviceCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(57, 255, 20, 0.2);
+  border-color: rgba(57, 255, 20, 0.5);
+}
+
+.serviceIcon {
+  background: linear-gradient(135deg, rgba(57, 255, 20, 0.3), rgba(57, 255, 20, 0.1));
+  color: #39ff14;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.serviceCard h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  color: #39ff14;
+}
+
+.serviceCard p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 20px;
+}
+
+.learnMore {
+  background: linear-gradient(90deg, #2dce89, #2b6cb0);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  transition: 0.3s ease;
+}
+
+.learnMore:hover {
+  background: linear-gradient(90deg, #2b6cb0, #2dce89);
+  transform: scale(1.05);
+}
+
+/* --- Features Section --- */
+.featuresSection {
+  max-width: 1200px;
+  margin: 0 auto 80px;
+}
+
+.featuresHeader {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.featuresHeader h2 {
+  font-size: 2.5rem;
+  color: #39ff14;
+  margin-bottom: 15px;
+}
+
+.featuresHeader p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.featuresList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+  transition: transform 0.3s ease;
+}
+
+.featureItem:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.featureIcon {
+  color: #39ff14;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.featureContent h3 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.featureContent p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+/* --- Popular Tasks Section --- */
+.popularTasksSection {
+  max-width: 1200px;
+  margin: 0 auto 40px;
+  text-align: center;
+}
+
+.popularTasksSection h2 {
+  font-size: 2.5rem;
+  color: #39ff14;
+  margin-bottom: 30px;
+}
+
+/* --- Popular Tasks Grid --- */
+.popular-tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.task {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.task:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.task img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.task-name {
+  padding: 15px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  background-color: white;
+}
+
+/* --- Show More Button --- */
+.button-container {
+  text-align: center;
+  margin: 40px 0 20px;
+}
+
+.show-more-btn {
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(to right, #fd8bff, #8b9aff);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.show-more-btn:hover {
+  transform: scale(1.05);
+  background: linear-gradient(to right, #8b9aff, #fd8bff);
+  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .servicesTitle {
+    font-size: 2.5rem;
   }
-  
-  .services h1 {
-    font-size: 3rem;
-    margin-bottom: 5rem;
-    color: #333;
-    text-align: center;
+
+  .featuresHeader h2,
+  .popularTasksSection h2 {
+    font-size: 2rem;
   }
-  
-  .serviceGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+
+  .task img {
+    height: 180px;
   }
-  
+
+  .show-more-btn {
+    padding: 10px 25px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .servicesTitle {
+    font-size: 2rem;
+  }
+
+  .featuresHeader h2,
+  .popularTasksSection h2 {
+    font-size: 1.8rem;
+  }
+
   .serviceCard {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 20px;
   }
-  
-  .serviceCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+  .serviceIcon {
+    width: 60px;
+    height: 60px;
   }
-  
-  .serviceCard h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.75rem;
-    color: #222;
-  }
-  
-  .serviceCard p {
+
+  .task-name {
     font-size: 1rem;
-    color: #555;
   }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .serviceGrid {
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .services {
-      padding: 1rem;
-    }
-  
-    .serviceGrid {
-      grid-template-columns: 1fr;
-    }
-  }
+}
