@@ -150,22 +150,20 @@ const Services = () => {
       
       <div className={styles.popularTasksSection}>
         <h2>Popular Tasks</h2>
-      </div>
-   
-      <div className="popular-tasks-container">
-        <div className="info-container">
-          <p className="info-cloud left-cloud">
+        
+        <div className={styles.infoContainer}>
+          <p className={`${styles.infoCloud} ${styles.leftCloud}`}>
             Ever felt stuck when an urgent task popped up, but you had no one to help? 🚀 GigBud connects you with people around, making life simpler and tasks easier.
           </p>
-          <p className="info-cloud right-cloud">
+          <p className={`${styles.infoCloud} ${styles.rightCloud}`}>
             Imagine needing someone to assemble furniture last minute or help with moving. 🏠 With GigBud, you find assistance in seconds, making daily life stress-free!
           </p>
         </div>
 
-        <div className="popular-tasks">
+        <div className={styles.popularTasks}>
           {tasks.slice(0, showAll ? tasks.length : 4).map((task) => (
-            <div key={task.id} className="task">
-              <div className="task-content">
+            <div key={task.id} className={styles.task}>
+              <div className={styles.taskContent}>
                 <img 
                   src={task.image} 
                   alt={task.name} 
@@ -174,20 +172,20 @@ const Services = () => {
                     e.target.src = placeholderImage;
                   }}
                 />
-                <p className="task-name">{task.name}</p>
+                <p className={styles.taskName}>{task.name}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="button-container">
-          <button onClick={() => setShowAll(!showAll)} className="show-more-btn">
+        <div className={styles.buttonContainer}>
+          <button onClick={() => setShowAll(!showAll)} className={styles.showMoreBtn}>
             {showAll ? "Show Less" : "Show More"}
           </button>
         </div>
-        
-        <Footer />
       </div>
+      
+      <Footer />
     </div>
   );
 };

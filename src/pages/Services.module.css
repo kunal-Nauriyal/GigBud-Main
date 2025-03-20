@@ -3,8 +3,10 @@
   padding: 100px 20px 0px;
   background-color: #0a1128;
   color: white;
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* --- Hero Section --- */
@@ -169,70 +171,135 @@
   margin-bottom: 30px;
 }
 
-/* --- Popular Tasks Grid --- */
-.popular-tasks {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 30px;
+/* --- Info Container --- */
+.infoContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+  margin: 0 auto 40px;
 }
 
-.task {
-  background: rgba(255, 255, 255, 0.9);
+.infoCloud {
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 15px;
+  padding: 20px 25px;
+  margin: 10px;
+  width: 45%;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.leftCloud {
+  transform: translateX(-10px);
+}
+
+.rightCloud {
+  transform: translateX(10px);
+}
+
+/* Task Grid Layout */
+.popularTasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 25px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Task Cards */
+.task {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+  height: 280px;
 }
 
 .task:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-12px);
+  box-shadow: 0 20px 30px rgba(57, 255, 20, 0.25);
+  border: 2px solid rgba(57, 255, 20, 0.6);
+}
+
+.taskContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .task img {
   width: 100%;
   height: 200px;
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
-.task-name {
-  padding: 15px;
+.task:hover img {
+  transform: scale(1.1);
+}
+
+.taskName {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 15px 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(0deg, rgba(10, 17, 40, 0.9) 0%, rgba(10, 17, 40, 0.7) 70%, rgba(10, 17, 40, 0) 100%);
+  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  margin: 0;
+}
+
+.task:hover .taskName {
+  background: linear-gradient(0deg, rgba(57, 255, 20, 0.8) 0%, rgba(57, 255, 20, 0.5) 70%, rgba(57, 255, 20, 0) 100%);
+  color: #0a1128;
+  font-weight: 700;
+}
+
+.buttonContainer {
+  text-align: center;
+  margin: 40px 0 60px;
+}
+
+.showMoreBtn {
+  padding: 14px 32px;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #333;
-  background-color: white;
-}
-
-/* --- Show More Button --- */
-.button-container {
-  text-align: center;
-  margin: 40px 0 20px;
-}
-
-.show-more-btn {
-  padding: 12px 30px;
-  font-size: 1rem;
-  font-weight: bold;
   color: white;
-  background: linear-gradient(to right, #fd8bff, #8b9aff);
+  background: linear-gradient(to right, #39ff14, #2b6cb0);
   border: none;
   border-radius: 50px;
   cursor: pointer;
   transition: 0.3s ease-in-out;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
 }
 
-.show-more-btn:hover {
+.showMoreBtn:hover {
   transform: scale(1.05);
-  background: linear-gradient(to right, #8b9aff, #fd8bff);
-  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(to right, #2b6cb0, #39ff14);
+  box-shadow: 0px 12px 20px rgba(57, 255, 20, 0.3);
 }
 
 /* --- Responsive --- */
+@media (max-width: 990px) {
+  .popularTasks {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .servicesTitle {
     font-size: 2.5rem;
@@ -242,14 +309,34 @@
   .popularTasksSection h2 {
     font-size: 2rem;
   }
-
-  .task img {
-    height: 180px;
+  
+  .popularTasks {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
   }
 
-  .show-more-btn {
-    padding: 10px 25px;
-    font-size: 0.95rem;
+  .task {
+    height: 250px;
+  }
+
+  .task img {
+    height: 170px;
+  }
+
+  .showMoreBtn {
+    padding: 12px 28px;
+    font-size: 1rem;
+  }
+  
+  .infoCloud {
+    width: 100%;
+    margin-bottom: 20px;
+    transform: none;
+  }
+  
+  .leftCloud,
+  .rightCloud {
+    transform: none;
   }
 }
 
@@ -271,8 +358,28 @@
     width: 60px;
     height: 60px;
   }
+  
+  .popularTasks {
+    grid-template-columns: 1fr;
+    max-width: 300px;
+    margin: 0 auto;
+  }
 
-  .task-name {
-    font-size: 1rem;
+  .task {
+    height: 280px;
+  }
+  
+  .task img {
+    height: 200px;
+  }
+
+  .taskName {
+    font-size: 1.05rem;
+    height: 50px;
+  }
+  
+  .showMoreBtn {
+    width: 80%;
+    max-width: 250px;
   }
 }

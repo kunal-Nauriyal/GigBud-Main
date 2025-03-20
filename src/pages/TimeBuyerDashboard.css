@@ -47,7 +47,7 @@
     height: calc(100vh - 100px);
     width: 30rem !important;
     background: white;
-    padding: 25px;
+    padding: 5px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -96,7 +96,7 @@
 /* Task Details */
 .task-details {
     flex: 1;
-    width: 60rem !important;
+    width: 60rem;
     background: white;
     padding: 20px;
     border-radius: 8px;

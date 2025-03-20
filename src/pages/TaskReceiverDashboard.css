@@ -2,35 +2,38 @@
 .dashboard-container {
     display: flex;
     flex-direction: row;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: calc(100vh - 80px); /* Adjust for header */
     background-color: #f8f9fa;
     gap: 20px;
     padding: 20px;
     position: relative;
+    overflow-x: hidden; /* Fix horizontal scroll issue */
 }
 
-/* Swapped: Controls panel is left, task list panel is right */
+/* Order is important: Controls panel is left, task list panel is right */
 .controls-panel {
-    order: 1;
+    flex: 0 0 30rem;
+    order: 0; /* Ensure it's on the left */
 }
 
 .task-list-panel {
-    order: 2;
+    flex: 1;
+    order: 1; /* Ensure it's on the right */
 }
 
 .Headline {
     background-color: #000051;
     color: white;
     padding: 20px;
-    margin-bottom: 0;
+    margin: 0;
     font-size: 2.3rem;
     text-align: center;
 }
 
 /* ======= Task List Toggle Button ======= */
 .task-list-toggle {
-    display: none;
+    display: none; /* Hidden on desktop, shown in media query */
     position: absolute;
     left: 0;
     top: 50%;
@@ -49,6 +52,7 @@
 /* ======= Controls Panel (Manage Your Tasks) ======= */
 .controls-panel {
     width: 30rem;
+    min-width: 280px;
     background: white;
     padding: 15px;
     border-radius: 8px;
@@ -59,6 +63,7 @@
     overflow-y: auto;
     transition: transform 0.3s ease;
     z-index: 99;
+    height: calc(100vh - 120px); /* Adjust for header and padding */
 }
 
 .sidebar-title {
@@ -148,7 +153,7 @@
 
 /* ======= Task List Panel ======= */
 .task-list-panel {
-    width: 65rem;
+    flex: 1;
     background: white;
     padding: 15px;
     border-radius: 8px;
@@ -157,7 +162,7 @@
     flex-direction: column;
     gap: 15px;
     overflow-y: auto;
-    transition: transform 0.3s ease;
+    height: calc(100vh - 120px); /* Adjust for header and padding */
 }
 
 .panel-title {
@@ -171,7 +176,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    width: 60rem !important;
+    width: 100%;
     overflow-y: auto;
     flex: 1;
     padding-right: 5px;
@@ -437,28 +442,33 @@
     .dashboard-container {
         flex-direction: column;
         padding: 10px;
-        overflow: hidden;
+        height: auto;
+        min-height: calc(100vh - 80px);
+        position: relative;
     }
 
     .task-list-toggle {
         display: block;
-        left: 10px;
-        top: 10px;
+        position: fixed;
+        left: 0;
+        top: 90px;
         transform: none;
+        z-index: 101;
     }
 
     .controls-panel {
         position: fixed;
         left: 0;
-        top: 0;
-        height: 100%;
+        top: 80px; /* Position right below header */
+        bottom: 0;
+        height: calc(100% - 80px);
         width: 80%;
         max-width: 300px;
-        z-index: 50;
-        background: white;
+        z-index: 100;
         transform: translateX(-100%);
         border-radius: 0;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        margin: 0;
     }
 
     .controls-panel.show {
@@ -467,17 +477,14 @@
 
     .task-list-panel {
         width: 100%;
-        max-width: 100%;
-        padding: 10px;
-        margin-top: 10px;
-    }
-
-    .task-list {
-        width: 100% !important;
+        margin-top: 0;
+        border-radius: 8px;
+        min-height: calc(100vh - 160px);
     }
 
     .panel-title {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
+        text-align: center;
     }
 
     .task-card {
@@ -494,7 +501,8 @@
 
     .modal-content {
         max-width: 100%;
-        height: 90vh;
+        height: auto;
+        max-height: 90vh;
     }
 
     .modal-details {
@@ -503,25 +511,10 @@
 
     .modal-footer {
         flex-direction: column;
+        gap: 8px;
     }
 
     .modal-button {
         width: 100%;
     }
-}
-
-/* ======= Scrollbar Styling ======= */
-.task-list::-webkit-scrollbar,
-.controls-panel::-webkit-scrollbar,
-.task-list-panel::-webkit-scrollbar,
-.modal-content::-webkit-scrollbar {
-    width: 5px;
-}
-
-.task-list::-webkit-scrollbar-thumb,
-.controls-panel::-webkit-scrollbar-thumb,
-.task-list-panel::-webkit-scrollbar-thumb,
-.modal-content::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 5px;
 }

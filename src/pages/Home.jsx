@@ -15,16 +15,14 @@ const Home = () => {
         <p className="tagline">A Place where Buying Time is Easy</p>
         
         <div className="hero-buttons">
-          <Link to="/login" className="btn primary-btn">Get Started</Link>
-         
+       
+        <Link to="/Login" className="btn primary-btn">Get Started</Link>
         </div>
       </div>
       
       {/* About Section */}
       <AboutSection />
-      
-      {/* Feedback Section */}
-      <FeedbackSection />
+           
       
       {/* Founder Section */}
       <FounderSection />

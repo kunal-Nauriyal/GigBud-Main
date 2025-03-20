@@ -11,7 +11,7 @@ import TimeBuyerDashboard from "./pages/TimeBuyerDashboard";
 import TaskReceiverDashboard from "./pages/TaskReceiverDashboard";
 import TaskForm from "./pages/Taskform";
 import BuyingTimeForm from "./pages/BuyingTimeForm";
-import LoginModal from "./pages/LoginModal";
+import LoginModal from "./pages/Login";
 
 import "./App.css";
 
