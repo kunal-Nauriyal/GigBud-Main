@@ -6,40 +6,40 @@ import FounderSection from '../components/FounderSection';
 import Footer from '../components/Footer';
 import './Home.css';
 
-const Home = () => {
+const Home = ({ openLoginModal }) => {
   return (
     <div>
       {/* Hero Section - Keeping your original design */}
       <div className="home-container">
         <h1 className="main-heading">GigBud</h1>
         <p className="tagline">A Place where Buying Time is Easy</p>
-        
+
         <div className="hero-buttons">
-       
-        <Link to="/Login" className="btn primary-btn">Get Started</Link>
+          {/* Updated to open login modal */}
+          <button onClick={openLoginModal} className="btn primary-btn">Get Started</button>
         </div>
       </div>
-      
+
       {/* About Section */}
       <AboutSection />
-           
-      
-      {/* Founder Section */}
-      <FounderSection />
-      
+
+      {/* Founder Section
+      <FounderSection /> */}
+
       {/* Call to Action Section */}
       <section className="cta-section">
         <div className="container">
           <h2>Ready to Get Started?</h2>
           <p>Join our growing community of task providers and time buyers today.</p>
           <div className="cta-buttons">
-            <Link to="/taskform" className="btn primary-btn">Post a Task</Link>
-           
+            {/* Updated to open login modal */}
+            <button onClick={openLoginModal} className="btn primary-btn">Post a Task</button>
           </div>
         </div>
       </section>
-       {/* footer Section */}
-       <Footer />
+
+      {/* Footer Section */}
+      <Footer />
     </div>
   );
 };

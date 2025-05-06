@@ -42,6 +42,8 @@ function App() {
             <Route path="/task-receiver-dashboard" element={<TaskReceiverDashboard />} />
             <Route path="/taskform" element={<TaskForm />} />
             <Route path="/buying-time-form" element={<BuyingTimeForm />} />
+            <Route path="/login" element={<LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />} />
+
           </Routes>
         </main>
 

@@ -127,7 +127,7 @@ Our vision is to revolutionize the gig economy by creating a frictionless, trust
             </div>
           </div>
         </section>
-        <Founder />
+        {/* <Founder /> */}
         <Footer />
       </div>
     );
