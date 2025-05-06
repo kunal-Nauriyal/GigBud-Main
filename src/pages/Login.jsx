@@ -14,27 +14,86 @@ function LoginModal({ isOpen, onClose }) {
     setRememberMe(!rememberMe);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add your authentication logic here
-    console.log("Form submitted:", isLoginForm ? "Login" : "Signup");
-    // Optionally close modal on successful submission
-    // onClose();
+
+    if (isLoginForm) {
+      // ---- LOGIN LOGIC ----
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      try {
+        const res = await fetch("http://localhost:3000/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("Login successful!");
+          console.log("Token:", data.data.token);
+
+          localStorage.setItem("token", data.data.token);
+          onClose(); // Close modal
+        } else {
+          alert(data.message || "Login failed.");
+        }
+      } catch (err) {
+        console.error("Login error:", err);
+        alert("Login error");
+      }
+    } else {
+      // ---- SIGNUP LOGIC ----
+      const name = document.getElementById("signup-name").value;
+      const email = document.getElementById("signup-email").value;
+      const password = document.getElementById("signup-password").value;
+      const confirmPassword = document.getElementById("signup-confirm-password").value;
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("Signup successful! Please log in.");
+          setIsLoginForm(true);
+        } else {
+          alert(data.message || "Signup failed.");
+        }
+      } catch (err) {
+        console.error("Signup error:", err);
+        alert("Signup error");
+      }
+    }
   };
 
-  // If modal is not open, don't render anything
   if (!isOpen) return null;
 
   return (
     <div className="login-container">
       <div className="login-box">
         <div className="close-button" onClick={onClose}>×</div>
-        
+
         <div className="logo-container">
           <div className="logo">GigBud</div>
           <div className="tagline">A Place Where Buying Time is Easy</div>
         </div>
-        
+
         <div className="form-container">
           {isLoginForm ? (
             <form onSubmit={handleSubmit} className="form">
@@ -59,7 +118,7 @@ function LoginModal({ isOpen, onClose }) {
                 />
               </div>
               <div className="checkbox-container">
-                <div 
+                <div
                   className={`custom-checkbox ${rememberMe ? 'checked' : ''}`}
                   onClick={toggleRememberMe}
                 ></div>
@@ -124,19 +183,13 @@ function LoginModal({ isOpen, onClose }) {
             </form>
           )}
         </div>
-        
+
         <div className="social-login">
           <p>Or continue with</p>
           <div className="social-icons">
-            <div className="social-icon">
-              <img src="/api/placeholder/20/20" alt="Google" />
-            </div>
-            <div className="social-icon">
-              <img src="/api/placeholder/20/20" alt="LinkedIn" />
-            </div>
-            <div className="social-icon">
-              <img src="/api/placeholder/20/20" alt="GitHub" />
-            </div>
+            <div className="social-icon"><img src="/api/placeholder/20/20" alt="Google" /></div>
+            <div className="social-icon"><img src="/api/placeholder/20/20" alt="LinkedIn" /></div>
+            <div className="social-icon"><img src="/api/placeholder/20/20" alt="GitHub" /></div>
           </div>
         </div>
       </div>
