@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./TaskProviderDashboard.css";
-import TaskForm from "./Taskform";
+import TaskForm from "./TaskForm";
 
 const TaskProviderDashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -8,8 +8,6 @@ const TaskProviderDashboard = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showTaskList, setShowTaskList] = useState(window.innerWidth > 768);
-
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const handleResize = () => setShowTaskList(window.innerWidth > 768);
@@ -23,6 +21,9 @@ const TaskProviderDashboard = () => {
 
   const fetchTasks = async () => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
       const res = await fetch("http://localhost:3000/api/tasks/task/list", {
         headers: {
           "Content-Type": "application/json",
@@ -31,39 +32,33 @@ const TaskProviderDashboard = () => {
       });
 
       const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error(`Expected JSON, got: ${text.slice(0, 100)}...`);
+      if (!contentType?.includes("application/json")) {
+        throw new Error("Expected JSON response");
       }
 
       const data = await res.json();
-
       if (res.ok) {
         setTasks(data.data);
         setSelectedTask(data.data[0] || null);
       } else {
-        console.error("Failed to fetch tasks:", data.message);
+        console.error("Error fetching tasks:", data.message);
       }
     } catch (err) {
-      console.error("Error fetching tasks:", err.message);
+      console.error("Fetch error:", err.message);
     }
   };
 
   const handleTaskCreated = (newTask) => {
-    setTasks([newTask, ...tasks]);
-    setShowTaskForm(false);
+    setTasks((prev) => [newTask, ...prev]);
     setSelectedTask(newTask);
-  };
-
-  const toggleTaskList = () => {
-    setShowTaskList(!showTaskList);
+    setShowTaskForm(false);
   };
 
   return (
     <div className="heading">
       <h1 className="Headline">Provider Dashboard</h1>
       <div className="dashboard-container">
-        <button className="task-list-toggle" onClick={toggleTaskList}>
+        <button className="task-list-toggle" onClick={() => setShowTaskList((prev) => !prev)}>
           {showTaskList ? "←" : "→"}
         </button>
 
@@ -77,7 +72,7 @@ const TaskProviderDashboard = () => {
             {tasks.map((task) => (
               <div
                 key={task._id}
-                className={`task-card ${selectedTask && selectedTask._id === task._id ? "selected" : ""}`}
+                className={`task-card ${selectedTask?._id === task._id ? "selected" : ""}`}
                 onClick={() => {
                   setSelectedTask(task);
                   if (window.innerWidth <= 768) setShowTaskList(false);
@@ -103,11 +98,9 @@ const TaskProviderDashboard = () => {
               <p><strong>Deadline:</strong> {new Date(selectedTask.deadline).toLocaleString()}</p>
 
               <h3>Applicants</h3>
-              {selectedTask.applicants && selectedTask.applicants.length === 0 ? (
-                <p className="Applicants">No Applicants Yet</p>
-              ) : (
+              {selectedTask.applicants?.length ? (
                 <div className="applicants-container">
-                  {selectedTask.applicants?.map((applicant) => (
+                  {selectedTask.applicants.map((applicant) => (
                     <div key={applicant._id} className="applicant-card">
                       <div className="applicant-info">
                         <div className="profile-pic-placeholder">Picture</div>
@@ -118,10 +111,12 @@ const TaskProviderDashboard = () => {
                           <div className="rating">⭐ {applicant.rating}</div>
                         </div>
                       </div>
-                      <button className="chat-button" onClick={() => alert("This feature will be available in a future update.")}>Chat</button>
+                      <button className="chat-button" onClick={() => alert("Chat feature coming soon!")}>Chat</button>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="Applicants">No Applicants Yet</p>
               )}
             </>
           ) : (
