@@ -42,8 +42,8 @@ export const createTask = async (req, res) => {
       };
     }
 
-    // Create new task
-    const newTask = new Task({
+    // Prepare task payload
+    const taskPayload = {
       user: userId,
       role,
       title,
@@ -51,13 +51,19 @@ export const createTask = async (req, res) => {
       deadline: new Date(deadline),
       timeRequirement: parseFloat(timeRequirement),
       mode,
-      location: geoLocation,
       budgetPerHour: parseFloat(budgetPerHour),
       notes,
-      attachment: null // Removed req.file usage for now
-    });
+      attachment: null
+    };
 
+    if (geoLocation) {
+      taskPayload.location = geoLocation;
+    }
+
+    // Create and save the task
+    const newTask = new Task(taskPayload);
     await newTask.save();
+
     return successResponse(res, 'Task created successfully', 201, newTask);
   } catch (error) {
     console.error('Error creating task:', error);

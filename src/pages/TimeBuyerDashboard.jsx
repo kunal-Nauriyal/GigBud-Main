@@ -1,61 +1,102 @@
 import React, { useState, useEffect } from "react";
 import "./TimeBuyerDashboard.css";
-import BuyingTimeForm from "./BuyingTimeForm"; // Import the Buying Time Form
+import BuyingTimeForm from "./BuyingTimeForm";
+
+const API_BASE_URL = "http://localhost:3000/api/tasks";
 
 const TimeBuyerDashboard = () => {
-  const [timeBookings, setTimeBookings] = useState([
-    {
-      id: 1,
-      buyer: "Rahul Sharma",
-      hours: 5,
-      workMode: "Online",
-      jobType: "Coding Tutor",
-      skills: ["JavaScript", "React"],
-      location: "",
-      budgetPerHour: 300,
-      applicants: [
-        { id: 1, name: "Amit Verma", rating: 4.5, price: 280 },
-        { id: 2, name: "Sneha Gupta", rating: 4.8, price: 320 },
-      ],
-    },
-    {
-      id: 2,
-      buyer: "Priya Verma",
-      hours: 3,
-      workMode: "In-Person",
-      jobType: "Personal Trainer",
-      skills: ["Fitness", "Diet Planning"],
-      location: "Delhi",
-      budgetPerHour: 500,
-      applicants: [
-        { id: 3, name: "Ravi Mehta", rating: 4.6, price: 450 },
-        { id: 4, name: "Neha Singh", rating: 4.9, price: 490 },
-      ],
-    },
-  ]);
-
-  const [selectedBooking, setSelectedBooking] = useState(timeBookings[0] || null);
-  const [showForm, setShowForm] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-
+  const [bookings, setBookings] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [showBookingList, setShowBookingList] = useState(window.innerWidth > 768);
 
-  // Handle window resize
   useEffect(() => {
-    const handleResize = () => {
-      setShowBookingList(window.innerWidth > 768);
-    };
+    fetchBookings();
+
+    const handleResize = () => setShowBookingList(window.innerWidth > 768);
     window.addEventListener("resize", handleResize);
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const toggleBookingList = () => {
-    setShowBookingList(!showBookingList);
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Authorization token missing");
+
+      const response = await fetch(`${API_BASE_URL}/task/list`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        throw new Error("Expected JSON response");
+      }
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setBookings(data.data);
+        setSelectedBooking(data.data[0] || null);
+      } else {
+        console.error("Error fetching bookings:", data.message || data);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error.message);
+    }
   };
 
-  const handleFormSubmit = (newBooking) => {
-    setTimeBookings([...timeBookings, { id: timeBookings.length + 1, ...newBooking }]);
-    setShowForm(false);
+  const handleFormSubmit = async (newBooking) => {
+    try {
+      if (!newBooking.description?.trim()) {
+        newBooking.description = "No description provided.";
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Authorization token missing");
+
+      const response = await fetch(`${API_BASE_URL}/task/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newBooking),
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        throw new Error("Expected JSON response");
+      }
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setBookings((prev) => [data.data, ...prev]);
+        setShowFormModal(false);
+      } else {
+        alert("Failed to submit booking.");
+        console.error("Submission error:", data.message || data);
+      }
+    } catch (error) {
+      console.error("Error submitting booking:", error.message);
+    }
+  };
+
+  const sortBookings = (criteria) => {
+    const sorted = [...bookings];
+    if (criteria === "hours") {
+      sorted.sort((a, b) => a.timeRequirement - b.timeRequirement);
+    } else if (criteria === "priceAsc") {
+      sorted.sort((a, b) => a.budgetPerHour - b.budgetPerHour);
+    } else if (criteria === "priceDesc") {
+      sorted.sort((a, b) => b.budgetPerHour - a.budgetPerHour);
+    }
+    setBookings(sorted);
   };
 
   return (
@@ -63,68 +104,69 @@ const TimeBuyerDashboard = () => {
       <h1 className="Headline">Time Buyer Dashboard</h1>
 
       <div className="dashboard-container">
-        {/* Toggle Button (Mobile) */}
-        <button 
-          className="task-list-toggle"
-          onClick={toggleBookingList}
-          aria-label={showBookingList ? "Hide Booking List" : "Show Booking List"}
-        >
+        <button className="task-list-toggle" onClick={() => setShowBookingList(!showBookingList)}>
           {showBookingList ? "←" : "→"}
         </button>
 
-        {/* Booking List */}
+        {/* Booking List Sidebar */}
         <div className={`task-list ${showBookingList ? "show" : "hide"}`}>
           <div className="task-header">
             <h2>Your Bookings</h2>
-            <button className="filter-button" onClick={() => setShowFilters(true)}>Filters</button>
+            <button className="filter-button" onClick={() => setShowFilterModal(true)}>
+              Filters
+            </button>
           </div>
 
           <div className="task-cards-container">
-            {timeBookings.map((booking) => (
-              <div 
-                key={booking.id} 
-                className={`task-card ${selectedBooking?.id === booking.id ? "selected" : ""}`}
-                onClick={() => {
-                  setSelectedBooking(booking);
-                  if (window.innerWidth <= 768) {
-                    setShowBookingList(false);
-                  }
-                }}
-              >
-                <h3>{booking.jobType}</h3>
-                <p><strong>Buyer:</strong> {booking.buyer}</p>
-                <p><strong>Hours:</strong> {booking.hours}</p>
-                <p><strong>Mode:</strong> {booking.workMode}</p>
-                {booking.location && <p><strong>Location:</strong> {booking.location}</p>}
-                <p><strong>Budget per Hour:</strong> ₹{booking.budgetPerHour}</p>
-              </div>
-            ))}
+            {bookings.length > 0 ? (
+              bookings.map((booking) => (
+                <div
+                  key={booking._id}
+                  className={`task-card ${selectedBooking?._id === booking._id ? "selected" : ""}`}
+                  onClick={() => {
+                    setSelectedBooking(booking);
+                    if (window.innerWidth <= 768) setShowBookingList(false);
+                  }}
+                >
+                  <h3>{booking.jobType}</h3>
+                  <p><strong>Buyer:</strong> {booking.buyer}</p>
+                  <p><strong>Hours:</strong> {booking.timeRequirement}</p>
+                  <p><strong>Mode:</strong> {booking.workMode}</p>
+                  {booking.location && <p><strong>Location:</strong> {booking.location}</p>}
+                  <p><strong>Budget per Hour:</strong> ₹{booking.budgetPerHour}</p>
+                </div>
+              ))
+            ) : (
+              <p className="no-bookings">No bookings yet.</p>
+            )}
           </div>
 
-          <button className="create-task-button" onClick={() => setShowForm(true)}>+ Book Time</button>
+          <button className="create-task-button" onClick={() => setShowFormModal(true)}>
+            + Book Time
+          </button>
         </div>
 
-        {/* Booking Details */}
+        {/* Booking Detail Section */}
         <div className="task-details">
           <h2>Booking Details</h2>
           {selectedBooking ? (
             <>
               <h3>{selectedBooking.jobType}</h3>
               <p><strong>Buyer:</strong> {selectedBooking.buyer}</p>
-              <p><strong>Hours:</strong> {selectedBooking.hours}</p>
+              <p><strong>Hours:</strong> {selectedBooking.timeRequirement}</p>
               <p><strong>Mode:</strong> {selectedBooking.workMode}</p>
               {selectedBooking.location && <p><strong>Location:</strong> {selectedBooking.location}</p>}
               <p><strong>Budget per Hour:</strong> ₹{selectedBooking.budgetPerHour}</p>
 
               <h3>Applicants</h3>
-              {selectedBooking.applicants.length > 0 ? (
+              {selectedBooking.applicants?.length > 0 ? (
                 selectedBooking.applicants.map((applicant) => (
-                  <div key={applicant.id} className="applicant-card">
+                  <div key={applicant._id} className="applicant-card">
                     <p><strong>{applicant.name}</strong></p>
                     <p>⭐ {applicant.rating}</p>
                     <p>Proposed Price: ₹{applicant.price}</p>
-                    <button 
-                      className="chat-button" 
+                    <button
+                      className="chat-button"
                       onClick={() => alert("This feature will be available in a future update.")}
                     >
                       Chat
@@ -141,24 +183,24 @@ const TimeBuyerDashboard = () => {
         </div>
       </div>
 
-      {/* Time Buying Form Modal */}
-      {showForm && (
-        <div className="task-form-modal" onClick={() => setShowForm(false)}>
+      {/* Booking Form Modal */}
+      {showFormModal && (
+        <div className="task-form-modal" onClick={() => setShowFormModal(false)}>
           <div className="task-form-content" onClick={(e) => e.stopPropagation()}>
-            <BuyingTimeForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />
+            <BuyingTimeForm onClose={() => setShowFormModal(false)} onSubmit={handleFormSubmit} />
           </div>
         </div>
       )}
 
       {/* Filter Modal */}
-      {showFilters && (
-        <div className="filter-modal" onClick={() => setShowFilters(false)}>
+      {showFilterModal && (
+        <div className="filter-modal" onClick={() => setShowFilterModal(false)}>
           <div className="filter-content" onClick={(e) => e.stopPropagation()}>
             <h3>Filter Bookings</h3>
-            <button onClick={() => setTimeBookings([...timeBookings].sort((a, b) => a.hours - b.hours))}>Sort by Hours</button>
-            <button onClick={() => setTimeBookings([...timeBookings].sort((a, b) => a.budgetPerHour - b.budgetPerHour))}>Price: Low to High</button>
-            <button onClick={() => setTimeBookings([...timeBookings].sort((a, b) => b.budgetPerHour - a.budgetPerHour))}>Price: High to Low</button>
-            <button className="close-button" onClick={() => setShowFilters(false)}>Close</button>
+            <button onClick={() => sortBookings("hours")}>Sort by Hours</button>
+            <button onClick={() => sortBookings("priceAsc")}>Price: Low to High</button>
+            <button onClick={() => sortBookings("priceDesc")}>Price: High to Low</button>
+            <button className="close-button" onClick={() => setShowFilterModal(false)}>Close</button>
           </div>
         </div>
       )}
