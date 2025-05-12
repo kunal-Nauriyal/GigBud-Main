@@ -8,15 +8,17 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
     timeRequirement: "",
     jobType: "",
     skills: [],
-    workMode: "Online",
+    workMode: "Remote",
     location: "",
+    lat: "",
+    lng: "",
     budgetPerHour: "",
     additionalNotes: "",
-    buyer: "Test Buyer", // Replace with dynamic user if needed
   });
 
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     validateForm();
@@ -36,7 +38,7 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
       setFormData({ ...formData, [name]: value });
     }
 
-    if (errors[name]) setErrors({ ...errors, [name]: "" });
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
   };
 
   const validateForm = () => {
@@ -44,38 +46,88 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
 
     if (!formData.title.trim()) newErrors.title = "Title is required.";
     if (!formData.deadline.trim()) newErrors.deadline = "Deadline is required.";
-    if (!formData.timeRequirement || isNaN(formData.timeRequirement) || Number(formData.timeRequirement) <= 0)
-      newErrors.timeRequirement = "Enter a valid number of hours.";
-    if (!formData.jobType.trim()) newErrors.jobType = "Job Type is required.";
-    if (formData.workMode === "In-Person" && !formData.location.trim())
-      newErrors.location = "Location is required.";
-    if (!formData.budgetPerHour || isNaN(formData.budgetPerHour) || Number(formData.budgetPerHour) <= 0)
+    if (!formData.timeRequirement || isNaN(formData.timeRequirement))
+      newErrors.timeRequirement = "Valid time is required.";
+    if (!formData.jobType.trim()) newErrors.jobType = "Job type is required.";
+    if (!formData.budgetPerHour || isNaN(formData.budgetPerHour))
       newErrors.budgetPerHour = "Valid budget is required.";
+
+    if (formData.workMode === "on-site") {
+      if (!formData.lat || !formData.lng) {
+        newErrors.lat = "Latitude required.";
+        newErrors.lng = "Longitude required.";
+      }
+    }
 
     setErrors(newErrors);
     setIsFormValid(Object.keys(newErrors).length === 0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     validateForm();
 
-    if (isFormValid) {
-      const formattedData = {
-        title: formData.title,
-        deadline: formData.deadline,
-        timeRequirement: Number(formData.timeRequirement),
-        jobType: formData.jobType,
-        skills: formData.skills,
-        workMode: formData.workMode,
-        location: formData.workMode === "In-Person" ? formData.location : "",
-        budgetPerHour: Number(formData.budgetPerHour),
-        description: formData.additionalNotes,
-        buyer: formData.buyer,
-      };
-      onSubmit(formattedData);
-    } else {
-      alert("Please fill all required fields!");
+    if (!isFormValid) {
+      alert("❌ Please fill all required fields.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in.");
+      return;
+    }
+
+    const payload = {
+      title: formData.title,
+      description: formData.additionalNotes || "No description provided.",
+      deadline: formData.deadline,
+      timeRequirement: parseFloat(formData.timeRequirement),
+      budgetPerHour: parseFloat(formData.budgetPerHour),
+      mode: formData.workMode.toLowerCase(),
+      notes: formData.skills.join(", "),
+    };
+
+    if (formData.workMode === "on-site") {
+      payload.lat = parseFloat(formData.lat);
+      payload.lng = parseFloat(formData.lng);
+    }
+
+    try {
+      setLoading(true);
+      // 1. Create the task
+      const createRes = await fetch("http://localhost:3000/api/tasks/task/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const createData = await createRes.json();
+      if (!createRes.ok) throw new Error(createData.message || "Task creation failed");
+
+      // 2. Accept the task
+      const taskId = createData.data._id;
+      const acceptRes = await fetch(`http://localhost:3000/api/tasks/task/accept/${taskId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const acceptData = await acceptRes.json();
+      if (!acceptRes.ok) throw new Error(acceptData.message || "Accepting task failed");
+
+      alert("✅ Task submitted and accepted!");
+      onSubmit(acceptData.data); // Pass accepted task to parent
+      onClose(); // Close modal
+    } catch (err) {
+      console.error("Submit error:", err.message);
+      alert("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,158 +137,130 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
         <div className="modal-header">
           <h2>Buying Time</h2>
           <span className="close-button" onClick={onClose}>
-            &#10006;
+            ×
           </span>
         </div>
 
         <div className="modal-content">
           <form className="buying-time-form" onSubmit={handleSubmit}>
-
-            <div className="form-group">
-              <label htmlFor="title">Title</label>
+            <label>
+              Title:
               <input
-                id="title"
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="e.g., Cleaning, Tutoring"
                 className={errors.title ? "input-error" : ""}
               />
-              {errors.title && <p className="error-text">{errors.title}</p>}
-            </div>
+            </label>
 
-            <div className="form-group">
-              <label htmlFor="deadline">Deadline</label>
+            <label>
+              Deadline:
               <input
-                id="deadline"
                 type="date"
                 name="deadline"
                 value={formData.deadline}
                 onChange={handleChange}
                 className={errors.deadline ? "input-error" : ""}
               />
-              {errors.deadline && <p className="error-text">{errors.deadline}</p>}
-            </div>
+            </label>
 
-            <div className="form-group">
-              <label htmlFor="timeRequirement">Time Requirement (hours)</label>
+            <label>
+              Time Required (in hours):
               <input
-                id="timeRequirement"
                 type="number"
                 name="timeRequirement"
                 value={formData.timeRequirement}
                 onChange={handleChange}
-                placeholder="e.g., 5"
                 className={errors.timeRequirement ? "input-error" : ""}
               />
-              {errors.timeRequirement && <p className="error-text">{errors.timeRequirement}</p>}
-            </div>
+            </label>
 
-            <div className="form-group">
-              <label htmlFor="jobType">Job Type</label>
-              <select
-                id="jobType"
-                name="jobType"
-                value={formData.jobType}
-                onChange={handleChange}
-                className={errors.jobType ? "input-error" : ""}
-              >
-                <option value="">Select Job Type</option>
-                <option value="Tutoring">Tutoring</option>
-                <option value="Cleaning">Cleaning</option>
-                <option value="Delivery">Delivery</option>
-              </select>
-              {errors.jobType && <p className="error-text">{errors.jobType}</p>}
-            </div>
-
-            <div className="form-group">
-              <label>Skills Required</label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="skills"
-                  value="Cleaning"
-                  onChange={handleChange}
-                  checked={formData.skills.includes("Cleaning")}
-                /> Cleaning
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="skills"
-                  value="Tutoring"
-                  onChange={handleChange}
-                  checked={formData.skills.includes("Tutoring")}
-                /> Tutoring
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="skills"
-                  value="Delivery"
-                  onChange={handleChange}
-                  checked={formData.skills.includes("Delivery")}
-                /> Delivery
-              </label>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="workMode">Work Mode</label>
-              <select
-                id="workMode"
-                name="workMode"
-                value={formData.workMode}
-                onChange={handleChange}
-              >
-                <option value="Online">Online</option>
-                <option value="In-Person">In-Person</option>
-              </select>
-            </div>
-
-            {formData.workMode === "In-Person" && (
-              <div className="form-group">
-                <label htmlFor="location">Location</label>
-                <input
-                  id="location"
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  placeholder="Location"
-                  className={errors.location ? "input-error" : ""}
-                />
-                {errors.location && <p className="error-text">{errors.location}</p>}
-              </div>
-            )}
-
-            <div className="form-group">
-              <label htmlFor="budgetPerHour">Budget per Hour (₹)</label>
+            <label>
+              Budget per Hour (₹):
               <input
-                id="budgetPerHour"
                 type="number"
                 name="budgetPerHour"
                 value={formData.budgetPerHour}
                 onChange={handleChange}
                 className={errors.budgetPerHour ? "input-error" : ""}
               />
-              {errors.budgetPerHour && <p className="error-text">{errors.budgetPerHour}</p>}
-            </div>
+            </label>
 
-            <div className="form-group">
-              <label htmlFor="additionalNotes">Additional Notes</label>
+            <label>
+              Job Type:
+              <input
+                type="text"
+                name="jobType"
+                value={formData.jobType}
+                onChange={handleChange}
+                className={errors.jobType ? "input-error" : ""}
+              />
+            </label>
+
+            <label>
+              Preferred Skills:
+              <div className="checkbox-group">
+                {["Communication", "Technical", "Writing", "Driving"].map((skill) => (
+                  <label key={skill}>
+                    <input
+                      type="checkbox"
+                      name="skills"
+                      value={skill}
+                      checked={formData.skills.includes(skill)}
+                      onChange={handleChange}
+                    />
+                    {skill}
+                  </label>
+                ))}
+              </div>
+            </label>
+
+            <label>
+              Work Mode:
+              <select name="workMode" value={formData.workMode} onChange={handleChange}>
+                <option value="Remote">Remote</option>
+                <option value="on-site">On-Site</option>
+              </select>
+            </label>
+
+            {formData.workMode === "on-site" && (
+              <>
+                <label>
+                  Latitude:
+                  <input
+                    type="number"
+                    name="lat"
+                    value={formData.lat}
+                    onChange={handleChange}
+                    className={errors.lat ? "input-error" : ""}
+                  />
+                </label>
+                <label>
+                  Longitude:
+                  <input
+                    type="number"
+                    name="lng"
+                    value={formData.lng}
+                    onChange={handleChange}
+                    className={errors.lng ? "input-error" : ""}
+                  />
+                </label>
+              </>
+            )}
+
+            <label>
+              Additional Notes:
               <textarea
-                id="additionalNotes"
                 name="additionalNotes"
                 value={formData.additionalNotes}
                 onChange={handleChange}
-                placeholder="Any additional details?"
               />
-            </div>
+            </label>
 
-            <div className="form-actions">
-              <button type="submit" disabled={!isFormValid}>Submit</button>
-            </div>
+            <button type="submit" className="submit-button" disabled={loading}>
+              {loading ? "Submitting..." : "Submit"}
+            </button>
           </form>
         </div>
       </div>

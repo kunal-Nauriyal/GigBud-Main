@@ -16,7 +16,6 @@ const TimeBuyerDashboard = () => {
 
     const handleResize = () => setShowBookingList(window.innerWidth > 768);
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -32,11 +31,6 @@ const TimeBuyerDashboard = () => {
         },
       });
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType?.includes("application/json")) {
-        throw new Error("Expected JSON response");
-      }
-
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -50,41 +44,10 @@ const TimeBuyerDashboard = () => {
     }
   };
 
-  const handleFormSubmit = async (newBooking) => {
-    try {
-      if (!newBooking.description?.trim()) {
-        newBooking.description = "No description provided.";
-      }
-
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Authorization token missing");
-
-      const response = await fetch(`${API_BASE_URL}/task/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newBooking),
-      });
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType?.includes("application/json")) {
-        throw new Error("Expected JSON response");
-      }
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setBookings((prev) => [data.data, ...prev]);
-        setShowFormModal(false);
-      } else {
-        alert("Failed to submit booking.");
-        console.error("Submission error:", data.message || data);
-      }
-    } catch (error) {
-      console.error("Error submitting booking:", error.message);
-    }
+  const handleFormSubmit = (newTask) => {
+    setBookings((prev) => [newTask, ...prev]);
+    setSelectedBooking(newTask);
+    setShowFormModal(false);
   };
 
   const sortBookings = (criteria) => {
@@ -128,11 +91,13 @@ const TimeBuyerDashboard = () => {
                     if (window.innerWidth <= 768) setShowBookingList(false);
                   }}
                 >
-                  <h3>{booking.jobType}</h3>
-                  <p><strong>Buyer:</strong> {booking.buyer}</p>
+                  <h3>{booking.title}</h3>
+                  <p><strong>Deadline:</strong> {new Date(booking.deadline).toLocaleDateString()}</p>
                   <p><strong>Hours:</strong> {booking.timeRequirement}</p>
-                  <p><strong>Mode:</strong> {booking.workMode}</p>
-                  {booking.location && <p><strong>Location:</strong> {booking.location}</p>}
+                  <p><strong>Mode:</strong> {booking.mode}</p>
+                  {booking.location?.coordinates && (
+                    <p><strong>Location:</strong> [{booking.location.coordinates.join(", ")}]</p>
+                  )}
                   <p><strong>Budget per Hour:</strong> ₹{booking.budgetPerHour}</p>
                 </div>
               ))
@@ -151,12 +116,15 @@ const TimeBuyerDashboard = () => {
           <h2>Booking Details</h2>
           {selectedBooking ? (
             <>
-              <h3>{selectedBooking.jobType}</h3>
-              <p><strong>Buyer:</strong> {selectedBooking.buyer}</p>
+              <h3>{selectedBooking.title}</h3>
+              <p><strong>Deadline:</strong> {new Date(selectedBooking.deadline).toLocaleDateString()}</p>
               <p><strong>Hours:</strong> {selectedBooking.timeRequirement}</p>
-              <p><strong>Mode:</strong> {selectedBooking.workMode}</p>
-              {selectedBooking.location && <p><strong>Location:</strong> {selectedBooking.location}</p>}
+              <p><strong>Mode:</strong> {selectedBooking.mode}</p>
+              {selectedBooking.location?.coordinates && (
+                <p><strong>Location:</strong> [{selectedBooking.location.coordinates.join(", ")}]</p>
+              )}
               <p><strong>Budget per Hour:</strong> ₹{selectedBooking.budgetPerHour}</p>
+              <p><strong>Notes:</strong> {selectedBooking.notes || "No notes."}</p>
 
               <h3>Applicants</h3>
               {selectedBooking.applicants?.length > 0 ? (
@@ -164,10 +132,10 @@ const TimeBuyerDashboard = () => {
                   <div key={applicant._id} className="applicant-card">
                     <p><strong>{applicant.name}</strong></p>
                     <p>⭐ {applicant.rating}</p>
-                    <p>Proposed Price: ₹{applicant.price}</p>
+                    <p>Proposed Price: ₹{applicant.proposedPrice}</p>
                     <button
                       className="chat-button"
-                      onClick={() => alert("This feature will be available in a future update.")}
+                      onClick={() => alert("Chat feature coming soon.")}
                     >
                       Chat
                     </button>
