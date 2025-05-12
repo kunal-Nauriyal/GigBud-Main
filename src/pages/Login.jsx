@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import './LoginSignup.css';
+import { useAuth } from "../context/AuthContext";
 
 function LoginModal({ isOpen, onClose }) {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
+  const { login } = useAuth(); // ✅ Use login from AuthContext
 
   const toggleForm = (e) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ function LoginModal({ isOpen, onClose }) {
           alert("Login successful!");
           console.log("Token:", data.data.token);
 
-          localStorage.setItem("token", data.data.token);
+          login(data.data.token); // ✅ Updates context & localStorage
           onClose(); // Close modal
         } else {
           alert(data.message || "Login failed.");

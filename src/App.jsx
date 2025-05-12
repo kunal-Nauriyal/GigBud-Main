@@ -13,10 +13,12 @@ import TaskForm from "./pages/Taskform";
 import BuyingTimeForm from "./pages/BuyingTimeForm";
 import LoginModal from "./pages/Login";
 
+import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { isLoggedIn } = useAuth();
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
@@ -30,7 +32,10 @@ function App() {
     <BrowserRouter>
       <div className="app-container">
         <Navbar openLoginModal={openLoginModal} />
-        <DashboardNavbar />
+
+        {/* Show Dashboard Navbar only when logged in */}
+        {isLoggedIn && <DashboardNavbar />}
+
         <main className="content">
           <Routes>
             <Route path="/" element={<Home openLoginModal={openLoginModal} />} />
@@ -42,12 +47,14 @@ function App() {
             <Route path="/task-receiver-dashboard" element={<TaskReceiverDashboard />} />
             <Route path="/taskform" element={<TaskForm />} />
             <Route path="/buying-time-form" element={<BuyingTimeForm />} />
-            <Route path="/login" element={<LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />} />
-
+            <Route
+              path="/login"
+              element={<LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />}
+            />
           </Routes>
         </main>
 
-        {/* Login Modal */}
+        {/* Global login modal (optional double render, but okay for modal) */}
         <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
       </div>
     </BrowserRouter>

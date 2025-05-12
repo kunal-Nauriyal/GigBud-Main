@@ -1,36 +1,31 @@
-// src/AuthContext.jsx
-import { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [isLoggedIn, setIsLoggedIn] = useState(!!token);
+  const [token, setToken] = useState(null); // ❌ No localStorage used
 
   const login = (newToken) => {
-    localStorage.setItem("token", newToken);
     setToken(newToken);
-    setIsLoggedIn(true);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
     setToken(null);
-    setIsLoggedIn(false);
   };
 
-  // Sync state if localStorage changes (optional, helpful in some edge cases)
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    setIsLoggedIn(!!storedToken);
-    setToken(storedToken);
-  }, []);
+  const isLoggedIn = !!token;
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, token, login, logout }}>
+    <AuthContext.Provider value={{ token, isLoggedIn, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
