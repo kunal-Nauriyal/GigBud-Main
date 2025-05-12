@@ -13,27 +13,25 @@ import TaskForm from "./pages/Taskform";
 import BuyingTimeForm from "./pages/BuyingTimeForm";
 import LoginModal from "./pages/Login";
 
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";  // <-- you're using this for auth
 import "./App.css";
 
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, logout } = useAuth(); // <-- get logout function from context
 
-  const openLoginModal = () => {
-    setIsLoginModalOpen(true);
-  };
-
-  const closeLoginModal = () => {
-    setIsLoginModalOpen(false);
-  };
+  const openLoginModal = () => setIsLoginModalOpen(true);
+  const closeLoginModal = () => setIsLoginModalOpen(false);
 
   return (
     <BrowserRouter>
       <div className="app-container">
-        <Navbar openLoginModal={openLoginModal} />
+        <Navbar
+          openLoginModal={openLoginModal}
+          isLoggedIn={isLoggedIn}
+          handleLogout={logout} // <-- pass it here
+        />
 
-        {/* Show Dashboard Navbar only when logged in */}
         {isLoggedIn && <DashboardNavbar />}
 
         <main className="content">
@@ -54,7 +52,7 @@ function App() {
           </Routes>
         </main>
 
-        {/* Global login modal (optional double render, but okay for modal) */}
+        {/* Global login modal */}
         <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
       </div>
     </BrowserRouter>
