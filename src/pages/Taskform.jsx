@@ -54,9 +54,10 @@ const TaskForm = ({ onClose, onTaskCreated }) => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         alert("You must be logged in to create a task.");
+        window.location.href = "/login";
         return;
       }
 
@@ -75,6 +76,7 @@ const TaskForm = ({ onClose, onTaskCreated }) => {
       });
 
       const result = await response.json();
+      
       if (response.ok) {
         alert("Task successfully submitted!");
         onTaskCreated(result.data);
@@ -92,10 +94,20 @@ const TaskForm = ({ onClose, onTaskCreated }) => {
         });
         setSelectedFile(null);
       } else {
+        if (response.status === 401) {
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+          return;
+        }
         alert("Failed to submit task: " + (result.message || "Unknown error"));
       }
     } catch (err) {
       console.error("Error submitting task:", err);
+      if (err.message.includes("401")) {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+        return;
+      }
       alert("Something went wrong while submitting the task.");
     }
   };

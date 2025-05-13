@@ -21,8 +21,12 @@ const TimeBuyerDashboard = () => {
 
   const fetchBookings = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Authorization token missing");
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        console.error("No access token found");
+        window.location.href = "/login";
+        return;
+      }
 
       const response = await fetch(`${API_BASE_URL}/task/list`, {
         headers: {
@@ -33,14 +37,24 @@ const TimeBuyerDashboard = () => {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok) {
         setBookings(data.data);
         setSelectedBooking(data.data[0] || null);
       } else {
-        console.error("Error fetching bookings:", data.message || data);
+        if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+          return;
+        }
+        console.error("Error fetching bookings:", data.message);
       }
     } catch (error) {
-      console.error("Fetch error:", error.message);
+      console.error("Error fetching bookings:", error.message);
+      if (error.message.includes("401")) {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+      }
     }
   };
 

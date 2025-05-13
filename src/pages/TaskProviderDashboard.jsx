@@ -21,8 +21,11 @@ const TaskProviderDashboard = () => {
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        console.error("No access token found");
+        return;
+      }
 
       const res = await fetch("http://localhost:3000/api/tasks/task/list", {
         headers: {
@@ -41,10 +44,20 @@ const TaskProviderDashboard = () => {
         setTasks(data.data);
         setSelectedTask(data.data[0] || null);
       } else {
+        if (res.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+          return;
+        }
         console.error("Error fetching tasks:", data.message);
       }
     } catch (err) {
-      console.error("Fetch error:", err.message);
+      console.error("Error fetching tasks:", err.message);
+      if (err.message.includes("401")) {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+      }
     }
   };
 

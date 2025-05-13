@@ -35,6 +35,8 @@
   overflow: hidden;
   animation: scaleIn 0.4s ease;
   z-index: 1001;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* Optional: Add a close button */
@@ -265,6 +267,11 @@
 /* Hide modal by default */
 .modal-hidden {
   display: none;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
 }
 
 /* Responsive styles */

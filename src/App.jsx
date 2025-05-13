@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import DashboardNavbar from "./components/DashboardNavbar";
 import Home from "./pages/Home";
@@ -39,20 +39,34 @@ function App() {
             <Route path="/" element={<Home openLoginModal={openLoginModal} />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
-            <Route path="/task-provider" element={<TaskProvider />} />
-            <Route path="/task-provider-dashboard" element={<TaskProviderDashboard />} />
-            <Route path="/time-buyer-dashboard" element={<TimeBuyerDashboard />} />
-            <Route path="/task-receiver-dashboard" element={<TaskReceiverDashboard />} />
-            <Route path="/taskform" element={<TaskForm />} />
-            <Route path="/buying-time-form" element={<BuyingTimeForm />} />
-            <Route
-              path="/login"
-              element={<LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />}
+            <Route 
+              path="/task-provider" 
+              element={isLoggedIn ? <TaskProvider /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/task-provider-dashboard" 
+              element={isLoggedIn ? <TaskProviderDashboard /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/time-buyer-dashboard" 
+              element={isLoggedIn ? <TimeBuyerDashboard /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/task-receiver-dashboard" 
+              element={isLoggedIn ? <TaskReceiverDashboard /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/taskform" 
+              element={isLoggedIn ? <TaskForm /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/buying-time-form" 
+              element={isLoggedIn ? <BuyingTimeForm /> : <Navigate to="/" />} 
             />
           </Routes>
         </main>
 
-        {/* Global login modal */}
+        {/* Single instance of LoginModal */}
         <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
       </div>
     </BrowserRouter>

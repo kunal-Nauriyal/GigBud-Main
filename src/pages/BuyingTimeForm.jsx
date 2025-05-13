@@ -72,9 +72,10 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("accessToken");
     if (!token) {
       alert("You must be logged in.");
+      window.location.href = "/login";
       return;
     }
 
@@ -106,7 +107,14 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
       });
 
       const createData = await createRes.json();
-      if (!createRes.ok) throw new Error(createData.message || "Task creation failed");
+      if (!createRes.ok) {
+        if (createRes.status === 401) {
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+          return;
+        }
+        throw new Error(createData.message || "Task creation failed");
+      }
 
       // 2. Accept the task
       const taskId = createData.data._id;
@@ -118,13 +126,25 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
       });
 
       const acceptData = await acceptRes.json();
-      if (!acceptRes.ok) throw new Error(acceptData.message || "Accepting task failed");
+      if (!acceptRes.ok) {
+        if (acceptRes.status === 401) {
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+          return;
+        }
+        throw new Error(acceptData.message || "Accepting task failed");
+      }
 
       alert("✅ Task submitted and accepted!");
       onSubmit(acceptData.data); // Pass accepted task to parent
       onClose(); // Close modal
     } catch (err) {
       console.error("Submit error:", err.message);
+      if (err.message.includes("401")) {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+        return;
+      }
       alert("❌ Error: " + err.message);
     } finally {
       setLoading(false);

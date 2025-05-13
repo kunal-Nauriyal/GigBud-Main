@@ -4,17 +4,20 @@ import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 import Blacklist from '../models/blacklist.js';
 
-// Helper function to generate token
-const generateToken = (userId) => {
-  if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is missing in environment variables');
-  }
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1h'
+// ✅ Helper function to generate both tokens
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: '15m', // short-lived
   });
+
+  const refreshToken = jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: '7d', // long-lived
+  });
+
+  return { accessToken, refreshToken };
 };
 
-// Register User
+// ✅ REGISTER
 export const register = async (req, res) => {
   try {
     const { name, email, password, location } = req.body;
@@ -49,13 +52,14 @@ export const register = async (req, res) => {
 
     await user.save();
 
-    const token = generateToken(user._id);
+    const { accessToken, refreshToken } = generateTokens(user._id);
 
     return res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        token,
+        accessToken,
+        refreshToken,
         userId: user._id,
         name: user.name,
         email: user.email
@@ -72,7 +76,7 @@ export const register = async (req, res) => {
   }
 };
 
-// Login User
+// ✅ LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -91,13 +95,14 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const token = generateToken(user._id);
+    const { accessToken, refreshToken } = generateTokens(user._id);
 
     return res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
-        token,
+        accessToken,
+        refreshToken,
         userId: user._id,
         name: user.name,
         email: user.email
@@ -114,7 +119,7 @@ export const login = async (req, res) => {
   }
 };
 
-// Logout User
+// ✅ LOGOUT
 export const logout = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -152,7 +157,32 @@ export const logout = async (req, res) => {
   }
 };
 
-// Get User Profile
+// ✅ REFRESH TOKEN
+export const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, message: 'Refresh token missing' });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const newAccessToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, {
+      expiresIn: '15m'
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Access token refreshed',
+      accessToken: newAccessToken
+    });
+
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return res.status(403).json({ success: false, message: 'Invalid or expired refresh token' });
+  }
+};
+
+// ✅ GET PROFILE
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
