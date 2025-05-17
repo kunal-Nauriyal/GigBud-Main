@@ -6,68 +6,101 @@ import { successResponse, errorResponse } from '../views/responseTemplates.js';
  */
 export const createTask = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      deadline,
-      timeRequirement,
-      budgetPerHour,
-      mode,
-      notes,
-      lat,
-      lng
-    } = req.body;
-
     const userId = req.user?.id;
-    const role = req.user?.role;
-
-    if (!userId || !role) {
+    if (!userId) {
       return errorResponse(res, 'Unauthorized: user not found', 401);
     }
 
-    // Validate required fields
-    if (!title || !description || !deadline || !budgetPerHour || !timeRequirement) {
-      return errorResponse(res, 'Missing required fields', 400);
+    const { taskType } = req.body;
+    if (!taskType || !['normal', 'timebuyer'].includes(taskType)) {
+      return errorResponse(res, 'Invalid task type', 400);
     }
 
-    // Handle on-site task location
-    let geoLocation = null;
-    if (mode === 'on-site') {
-      if (!lat || !lng) {
-        return errorResponse(res, 'Latitude and longitude are required for on-site tasks', 400);
-      }
-      geoLocation = {
-        type: 'Point',
-        coordinates: [parseFloat(lng), parseFloat(lat)]
-      };
-    }
-
-    // Prepare task payload
-    const taskPayload = {
+    let taskData = {
       user: userId,
-      role,
-      title,
-      description,
-      deadline: new Date(deadline),
-      timeRequirement: parseFloat(timeRequirement),
-      mode,
-      budgetPerHour: parseFloat(budgetPerHour),
-      notes,
-      attachment: null
+      taskType,
+      status: 'pending',
     };
 
-    if (geoLocation) {
-      taskPayload.location = geoLocation;
+    // Process location data
+    let locationMode = req.body.location?.mode || req.body.location || 'Online';
+    locationMode = typeof locationMode === 'string' ? locationMode : 'Online';
+    
+    taskData.location = {
+      type: 'Point',
+      coordinates: req.body.location?.coordinates || [0, 0],
+      mode: locationMode,
+      ...(req.body.address && { address: req.body.address })
+    };
+
+    if (req.file) {
+      taskData.attachment = req.file.path;
     }
 
-    // Create and save the task
-    const newTask = new Task(taskPayload);
+    if (taskType === 'normal') {
+      const { title, description, deadline, budget } = req.body;
+
+      const errors = [];
+      if (!title?.trim()) errors.push('Title is required');
+      if (!description?.trim()) errors.push('Description is required');
+      if (!deadline) errors.push('Deadline is required');
+      if (!budget || isNaN(parseFloat(budget))) {
+        errors.push('Valid budget amount is required');
+      }
+
+      if (errors.length > 0) {
+        return errorResponse(res, errors.join(', '), 400);
+      }
+
+      Object.assign(taskData, {
+        title: title.trim(),
+        description: description.trim(),
+        deadline: new Date(deadline),
+        budget: parseFloat(budget),
+      });
+    } else {
+      // Time buyer task
+      const {
+        timeRequirement,
+        jobType,
+        skills,
+        workMode = 'Online',
+        budgetPerHour,
+        additionalNotes,
+      } = req.body;
+
+      const errors = [];
+      if (!timeRequirement?.trim()) errors.push('Time requirement is required');
+      if (!jobType?.trim()) errors.push('Job type is required');
+      if (!budgetPerHour || isNaN(parseFloat(budgetPerHour))) {
+        errors.push('Valid budget per hour is required');
+      }
+
+      if (errors.length > 0) {
+        return errorResponse(res, errors.join(', '), 400);
+      }
+
+      Object.assign(taskData, {
+        timeRequirement: timeRequirement.trim(),
+        jobType: jobType.trim(),
+        skills: Array.isArray(skills) ? skills : (skills?.split(',') || []),
+        workMode,
+        budgetPerHour: parseFloat(budgetPerHour),
+        ...(additionalNotes && { additionalNotes: additionalNotes.trim() }),
+      });
+    }
+
+    const newTask = new Task(taskData);
     await newTask.save();
 
     return successResponse(res, 'Task created successfully', 201, newTask);
   } catch (error) {
     console.error('Error creating task:', error);
-    return errorResponse(res, 'Server error', 500);
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return errorResponse(res, messages.join(', '), 400);
+    }
+    return errorResponse(res, error.message || 'Server error', 500);
   }
 };
 
@@ -181,6 +214,37 @@ export const deleteTask = async (req, res) => {
     return successResponse(res, 'Task deleted successfully', 200, task);
   } catch (error) {
     console.error('Error deleting task:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+/**
+ * Get all available (unassigned) tasks
+ */
+export const getAvailableTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find({ assignedTo: null, status: 'pending' }).sort({ createdAt: -1 });
+    return successResponse(res, 'Available tasks retrieved successfully', 200, tasks);
+  } catch (error) {
+    console.error('Error retrieving available tasks:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+/**
+ * Get tasks assigned to the current provider
+ */
+export const getTasksByProvider = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return errorResponse(res, 'Unauthorized: user not found', 401);
+    }
+
+    const tasks = await Task.find({ assignedTo: userId }).sort({ createdAt: -1 });
+    return successResponse(res, 'Tasks retrieved successfully for provider', 200, tasks);
+  } catch (error) {
+    console.error('Error retrieving provider tasks:', error);
     return errorResponse(res, 'Server error', 500);
   }
 };

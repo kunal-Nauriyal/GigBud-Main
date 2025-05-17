@@ -1,520 +1,501 @@
-/* ======= Dashboard Layout ======= */
-.dashboard-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: calc(100vh - 80px); /* Adjust for header */
-    background-color: #f8f9fa;
-    gap: 20px;
-    padding: 20px;
-    position: relative;
-    overflow-x: hidden; /* Fix horizontal scroll issue */
-}
-
-/* Order is important: Controls panel is left, task list panel is right */
-.controls-panel {
-    flex: 0 0 30rem;
-    order: 0; /* Ensure it's on the left */
-}
-
-.task-list-panel {
-    flex: 1;
-    order: 1; /* Ensure it's on the right */
-}
-
-.Headline {
-    background-color: #000051;
-    color: white;
-    padding: 20px;
+/* GigBud Task Dashboard Styles */
+:root {
+    --primary: #0D1A56;
+    --accent: #00FF9D;
+    --sidebar-bg: #fff;
+    --main-bg: #f4f6fa;
+    --card-bg: #f5f8ff;
+    --shadow: 0 2px 16px #e3e3e3;
+    --radius: 18px;
+    --radius-sm: 8px;
+    --font: 'Inter', 'Poppins', Arial, sans-serif;
+  }
+  
+  body, html {
+    font-family: var(--font);
+    background: var(--main-bg);
     margin: 0;
-    font-size: 2.3rem;
-    text-align: center;
-}
-
-/* ======= Task List Toggle Button ======= */
-.task-list-toggle {
-    display: none; /* Hidden on desktop, shown in media query */
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #000051;
-    color: white;
-    border: none;
-    border-radius: 0 5px 5px 0;
-    padding: 15px 10px;
-    font-size: 1.2rem;
-    z-index: 100;
-    cursor: pointer;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-}
-
-/* ======= Controls Panel (Manage Your Tasks) ======= */
-.controls-panel {
-    width: 30rem;
-    min-width: 280px;
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 0;
+  }
+  
+  /* Layout */
+  .gigbud-dashboard-root {
+    display: flex;
+    min-height: 100vh;
+    background: var(--main-bg);
+  }
+  
+  .gigbud-sidebar {
+    width: 300px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0D1A56 80%, #00FF9D 200%);
+    color: #fff;
+    box-shadow: 2px 0 16px 0 rgba(13,26,86,0.10);
+    border-top-right-radius: 24px;
+    border-bottom-right-radius: 24px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    overflow-y: auto;
-    transition: transform 0.3s ease;
-    z-index: 99;
-    height: calc(100vh - 120px); /* Adjust for header and padding */
-}
-
-.sidebar-title {
-    font-size: 2rem;
+    align-items: flex-start;
+    padding: 2rem 1.5rem;
+    position: relative;
+  }
+  
+  .gigbud-sidebar .sidebar-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .gigbud-sidebar .sidebar-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
-    margin-bottom: 15px;
-    color: #000051;
-    text-align: center;
-}
-
-.tabs {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tabs button {
-    padding: 12px 15px;
-    font-size: 1rem;
+    color: #0D1A56;
+    font-size: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  
+  .gigbud-tab-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    color: #fff;
+    padding: 1rem 1.25rem;
     text-align: left;
-    border-radius: 5px;
-    border: none;
     cursor: pointer;
-    background: #e8e8e8;
-    transition: 0.3s ease;
-}
-
-.tabs button.active,
-.tabs button:hover {
-    background-color: #000051;
-    color: white;
-    opacity: 0.9;
-}
-
-/* Search & Filters */
-.search-filter-container {
+    border-radius: 12px;
+    font-size: 1.05rem;
     display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 10px;
-}
-
-.search-bar {
+    align-items: center;
+    gap: 0.75rem;
+    transition: background 0.2s, color 0.2s;
+  }
+  
+  .gigbud-tab-btn.active, .gigbud-tab-btn:hover {
+    background: rgba(0,255,157,0.15);
+    color: #00FF9D;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,255,157,0.10);
+  }
+  
+  .gigbud-tab-btn .location-badge {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  
+  .gigbud-sidebar-filters {
+    margin-top: 32px;
+    padding: 0 32px 32px 32px;
+  }
+  
+  .gigbud-sidebar-filters label {
+    font-weight: 500;
+    color: #fff;
+    font-size : 15px;
+  }
+  
+  .gigbud-sidebar-filters select {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-.filters {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.filters label {
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-
-.filters select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 0.95rem;
-}
-
-/* Create Task Button */
-.create-task-button {
-    margin-top: auto;
-    padding: 12px 20px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.create-task-button:hover {
-    background-color: #218838;
-}
-
-/* ======= Task List Panel ======= */
-.task-list-panel {
-    flex: 1;
+    margin-top: 0.4rem;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1.5px solid #00FF9D;
+    font-weight: 500;
+    font-size: 1.05rem;
+    margin-bottom: 1.2rem;
+    background: #0D1A56;
+    color: #fff;
+    outline: none;
+    transition: border 0.18s, background 0.18s;
+    box-shadow: 0 2px 8px rgba(0,255,157,0.05);
+  }
+  
+  .gigbud-sidebar-filters select:focus {
+    border: 2px solid #00FF9D;
+    background: #0a1340;
+  }
+  
+  /* Panel */
+  .gigbud-panel {
     background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    margin: 0 auto;
+    margin-left: 10rem;
+    max-width: 900px;
+    width: 100vw;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    overflow-y: auto;
-    height: calc(100vh - 120px); /* Adjust for header and padding */
-}
-
-.panel-title {
+    gap: 24px;
+    min-height: 500px;
+  }
+  
+  .gigbud-panel-title {
     font-size: 2rem;
-    font-weight: bold;
-    color: #000051;
-    margin-bottom: 10px;
-}
-
-.task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    overflow-y: auto;
-    flex: 1;
-    padding-right: 5px;
-}
-
-.task-card {
-    background: #f1f3f5;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s;
-    border-left: 4px solid transparent;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    position: relative;
-}
-
-.task-card:hover,
-.task-card.selected {
-    background: #e0e4e7;
-    border-left: 4px solid #000051;
-}
-
-.task-card-header {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.task-card-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-}
-
-.task-type-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: white;
-    width: fit-content;
-}
-
-.task-type-badge.regular {
-    background-color: #007bff;
-}
-
-.task-type-badge.time-based {
-    background-color: #6610f2;
-}
-
-.task-card-info p {
-    margin: 5px 0;
-    font-size: 0.95rem;
-    color: #444;
-}
-
-/* Task Action Buttons */
-.task-action-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.apply-button, .save-button, .withdraw-button, .unsave-button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.apply-button {
-    background-color: #007bff;
-    color: white;
-}
-
-.apply-button:hover {
-    background-color: #0069d9;
-}
-
-.save-button {
-    background-color: #6c757d;
-    color: white;
-}
-
-.save-button:hover {
-    background-color: #5a6268;
-}
-
-.withdraw-button {
-    background-color: #dc3545;
-    color: white;
-}
-
-.withdraw-button:hover {
-    background-color: #c82333;
-}
-
-.unsave-button {
-    background-color: #ffc107;
-    color: #212529;
-}
-
-.unsave-button:hover {
-    background-color: #e0a800;
-}
-
-.no-tasks-message {
+    color: var(--primary);
+    margin-bottom: 1rem;
     text-align: center;
-    padding: 30px;
-    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Search Bar Styling */
+  .gigbud-searchbar-row {
+    display: flex;
+    justify-content: flex-end;
+   
+    margin-bottom: 1rem;
+  }
+  
+  .gigbud-searchbar {
+    width: 100vw ;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 20px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .gigbud-searchbar:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(13, 26, 86, 0.1);
+  }
+  
+  .gigbud-searchbar::placeholder {
+    color: #888;
+  }
+  
+  /* Task Card */
+  .gigbud-task-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+  }
+  
+  .gigbud-task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .task-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .task-title {
     font-size: 1.1rem;
-}
-
-/* ======= Modal Styles ======= */
-.modal-overlay {
+    font-weight: 600;
+    color: var(--primary);
+  }
+  
+  .task-location {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .task-desc {
+    color: #444;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+  
+  .task-meta {
+    display: flex;
+    gap: 1.5rem;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  
+  .task-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  
+  .task-actions button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .task-actions .apply {
+    background: var(--primary);
+    color: white;
+  }
+  
+  .task-actions .apply:hover {
+    background: #0a1340;
+  }
+  
+  .task-actions .save {
+    background: #f0f2f5;
+    color: var(--primary);
+  }
+  
+  .task-actions .save:hover {
+    background: #e4e6e9;
+  }
+  
+  /* Status Badges */
+  .task-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .task-status-badge.applied {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+  
+  .task-status-badge.saved {
+    background: #fff3e0;
+    color: #f57c00;
+  }
+  
+  .task-status-badge.inprogress {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  .task-status-badge.completed {
+    background: #f3e5f5;
+    color: #7b1fa2;
+  }
+  
+  /* Rating */
+  .gigbud-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .gigbud-rating .star {
+    color: #ffd700;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+  
+  .gigbud-rating .star.inactive {
+    color: #e0e0e0;
+  }
+  
+  /* Location Modal */
+  .gigbud-modal-bg {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.25);
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     z-index: 1000;
-    padding: 20px;
-}
-
-.modal-content {
+  }
+  
+  .gigbud-modal {
     background: white;
-    border-radius: 8px;
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: var(--shadow);
+    width: 90%;
+    max-width: 400px;
+  }
+  
+  .gigbud-modal h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 18px;
+  }
+  
+  .gigbud-modal input {
     width: 100%;
-    max-width: 700px;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    animation: modal-appear 0.3s ease-out;
-}
-
-@keyframes modal-appear {
-    from {
-        opacity: 0;
-        transform: translateY(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.modal-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-    z-index: 10;
-}
-
-.modal-close:hover {
-    color: #000;
-}
-
-.modal-header {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-bottom: 1px solid #e9ecef;
-    border-radius: 8px 8px 0 0;
-}
-
-.modal-header h2 {
-    margin: 10px 0;
-    color: #333;
-    font-size: 1.8rem;
-}
-
-.task-category {
-    font-size: 1rem;
-    color: #6c757d;
-    margin-top: 5px;
-}
-
-.modal-body {
-    padding: 20px;
-}
-
-.modal-section {
-    margin-bottom: 20px;
-}
-
-.modal-section h3 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    color: #000051;
-}
-
-.modal-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.detail-item {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--primary);
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+  
+  .gigbud-modal .map-placeholder {
+    width: 100%;
+    height: 120px;
+    background: #e6f7f2;
+    border-radius: var(--radius-sm);
     display: flex;
-    flex-direction: column;
-}
-
-.detail-label {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.detail-value {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #333;
-}
-
-.skills-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.skill-tag {
-    display: inline-block;
-    padding: 5px 10px;
-    background-color: #e1f5fe;
-    color: #0277bd;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-.modal-footer {
-    padding: 15px 20px;
-    border-top: 1px solid #e9ecef;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    margin-bottom: 16px;
+  }
+  
+  .gigbud-modal .modal-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-}
-
-.modal-button {
-    padding: 10px 20px;
-    font-size: 1rem;
-}
-
-/* ======= Responsive Design ======= */
-@media screen and (max-width: 768px) {
-    .dashboard-container {
-        flex-direction: column;
-        padding: 10px;
-        height: auto;
-        min-height: calc(100vh - 80px);
-        position: relative;
+    gap: 12px;
+  }
+  
+  .gigbud-modal button {
+    border: none;
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  
+  .gigbud-modal button.save {
+    background: var(--primary);
+    color: white;
+  }
+  
+  .gigbud-modal button.cancel {
+    background: #eee;
+    color: var(--primary);
+  }
+  
+  .gigbud-modal button.use-location {
+    background: var(--accent);
+    color: var(--primary);
+    margin-bottom: 16px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .gigbud-dashboard-root {
+      flex-direction: column;
     }
-
-    .task-list-toggle {
-        display: block;
-        position: fixed;
-        left: 0;
-        top: 90px;
-        transform: none;
-        z-index: 101;
+    .gigbud-sidebar {
+      width: 100%;
+      padding: 1rem;
     }
-
-    .controls-panel {
-        position: fixed;
-        left: 0;
-        top: 80px; /* Position right below header */
-        bottom: 0;
-        height: calc(100% - 80px);
-        width: 80%;
-        max-width: 300px;
-        z-index: 100;
-        transform: translateX(-100%);
-        border-radius: 0;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-        margin: 0;
+    .gigbud-main {
+      padding: 1rem;
     }
-
-    .controls-panel.show {
-        transform: translateX(0);
+    .gigbud-searchbar {
+      width: 100%;
     }
-
-    .task-list-panel {
-        width: 100%;
-        margin-top: 0;
-        border-radius: 8px;
-        min-height: calc(100vh - 160px);
-    }
-
-    .panel-title {
-        font-size: 1.5rem;
-        text-align: center;
-    }
-
-    .task-card {
-        padding: 12px;
-    }
-
-    .task-action-buttons {
-        flex-direction: column;
-    }
-
-    .apply-button, .save-button, .withdraw-button, .unsave-button {
-        width: 100%;
-    }
-
-    .modal-content {
-        max-width: 100%;
-        height: auto;
-        max-height: 90vh;
-    }
-
-    .modal-details {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-footer {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .modal-button {
-        width: 100%;
-    }
-}
+  }
+  
+  /* Remove Create Task button styles */
+  .gigbud-create-task-btn, .gigbud-sidebar-bottom {
+    display: none !important;
+  }
+  
+  /* Task Details Modal */
+  .task-details-modal {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px;
+  }
+  
+  .task-details-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 24px 0;
+  }
+  
+  .task-details-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+  }
+  
+  .task-details-section h3 {
+    color: var(--primary);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  
+  .task-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .detail-label {
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .detail-value {
+    color: var(--primary);
+    font-weight: 500;
+    font-size: 16px;
+  }
+  
+  .requirements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .requirements-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    color: #444;
+  }
+  
+  .requirements-list li:last-child {
+    border-bottom: none;
+  }
+  
+  .task-details-modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #eee;
+  }
+  
+  .task-details-modal .modal-actions button {
+    min-width: 100px;
+  }
+  
+  /* Make task cards clickable */
+  .gigbud-task-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .gigbud-task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  

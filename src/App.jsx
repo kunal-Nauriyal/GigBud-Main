@@ -13,15 +13,21 @@ import TaskForm from "./pages/Taskform";
 import BuyingTimeForm from "./pages/BuyingTimeForm";
 import LoginModal from "./pages/Login";
 
-import { useAuth } from "./context/AuthContext";  // <-- you're using this for auth
+import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const { isLoggedIn, logout } = useAuth(); // <-- get logout function from context
+  const { isLoggedIn, logout, initialCheckDone } = useAuth();
 
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
+
+  // This is a very minimal loading indicator - it ensures nothing renders
+  // until we've checked if the user is logged in or not
+  if (!initialCheckDone) {
+    return null; // Or return a loading spinner if you prefer
+  }
 
   return (
     <BrowserRouter>
@@ -29,10 +35,11 @@ function App() {
         <Navbar
           openLoginModal={openLoginModal}
           isLoggedIn={isLoggedIn}
-          handleLogout={logout} // <-- pass it here
+          handleLogout={logout}
         />
 
-        {isLoggedIn && <DashboardNavbar />}
+        {/* Only render DashboardNavbar if user is logged in */}
+        {isLoggedIn === true && <DashboardNavbar />}
 
         <main className="content">
           <Routes>
@@ -66,7 +73,6 @@ function App() {
           </Routes>
         </main>
 
-        {/* Single instance of LoginModal */}
         <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
       </div>
     </BrowserRouter>

@@ -2,80 +2,139 @@ import mongoose from 'mongoose';
 
 const TaskSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
+    // Common fields for both task types
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    role: {
+    taskType: {
       type: String,
-      enum: ['buyer', 'provider', 'user'], // ✅ 'user' added here
-      required: false,
-    },
-    location: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        required: function () {
-          return this.mode === 'on-site';
-        },
-      },
-      coordinates: {
-        type: [Number],
-        required: function () {
-          return this.mode === 'on-site';
-        },
-      },
-    },
-    deadline: {
-      type: Date,
+      enum: ['normal', 'timebuyer'],
       required: true,
-    },
-    timeRequirement: {
-      type: Number,
-      required: true,
-    },
-    mode: {
-      type: String,
-      enum: ['remote', 'on-site'],
-      default: 'remote',
-    },
-    budgetPerHour: {
-      type: Number,
-      required: true,
-    },
-    notes: {
-      type: String,
     },
     attachment: {
       type: String,
     },
-    applicants: [
-      {
-        name: String,
-        proposedPrice: Number,
-        rating: Number,
-      },
-    ],
     status: {
       type: String,
       enum: ['pending', 'accepted', 'completed'],
       default: 'pending',
     },
+
+    // Location field (updated to handle both string and GeoJSON)
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0]
+      },
+      mode: {
+        type: String,
+        enum: ['Online', 'In-Person'],
+        required: true
+      },
+      address: String
+    },
+
+    // Normal Task specific fields
+    title: {
+      type: String,
+      required: function () {
+        return this.taskType === 'normal';
+      },
+    },
+    description: {
+      type: String,
+      required: function () {
+        return this.taskType === 'normal';
+      },
+    },
+    deadline: {
+      type: Date,
+      required: function () {
+        return this.taskType === 'normal';
+      },
+    },
+    budget: {
+      type: Number,
+      required: function () {
+        return this.taskType === 'normal';
+      },
+    },
+
+    // Time Buyer Task specific fields
+    timeRequirement: {
+      type: String,
+      required: function () {
+        return this.taskType === 'timebuyer';
+      },
+    },
+    jobType: {
+      type: String,
+      required: function () {
+        return this.taskType === 'timebuyer';
+      },
+    },
+    skills: [
+      {
+        type: String,
+      },
+    ],
+    workMode: {
+      type: String,
+      enum: ['Online', 'In-Person'],
+      default: 'Online',
+      required: function () {
+        return this.taskType === 'timebuyer';
+      },
+    },
+    budgetPerHour: {
+      type: Number,
+      required: function () {
+        return this.taskType === 'timebuyer';
+      },
+    },
+    additionalNotes: {
+      type: String,
+    },
+
+    // Applicants array for task applications
+    applicants: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        proposedPrice: Number,
+        status: {
+          type: String,
+          enum: ['pending', 'accepted', 'rejected'],
+          default: 'pending',
+        },
+        appliedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    // Assignment tracking
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
   { timestamps: true }
 );
 
-// Enable geospatial queries for location
-TaskSchema.index({ location: '2dsphere' });
+// Add 2dsphere index for location queries
+TaskSchema.index({ 'location.coordinates': '2dsphere' });
 
+// Export model
 const Task = mongoose.model('Task', TaskSchema);
 export default Task;

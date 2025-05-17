@@ -1,259 +1,266 @@
-import React, { useState, useEffect } from "react";
-import "./TaskReceiverDashboard.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { taskAPI } from '../services/api';
+import { toast } from 'react-toastify';
+import './TaskReceiverDashboard.css';
 
-const TaskManagement = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("newTasks");
+const TaskReceiverDashboard = () => {
+  const navigate = useNavigate();
+  const { isLoggedIn, user } = useAuth();
+  const [activeTab, setActiveTab] = useState('available');
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [savedTasks, setSavedTasks] = useState([]);
-  const [appliedTasks, setAppliedTasks] = useState([]);
-  const [sortOrder, setSortOrder] = useState("deadline");
-  const [filterType, setFilterType] = useState("all");
-  const [showModal, setShowModal] = useState(false);
-  const [showControlsPanel, setShowControlsPanel] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [location, setLocation] = useState('');
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationInput, setLocationInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      // Only auto-hide panel on initial load for mobile
-      if (mobile && !isMobile) {
-        setShowControlsPanel(false);
-      } else if (!mobile && isMobile) {
-        setShowControlsPanel(true);
+    if (!isLoggedIn) {
+      toast.error('Please login to continue');
+      navigate('/');
+      return;
+    }
+
+    fetchTasks();
+  }, [isLoggedIn, navigate, activeTab, location]);
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      let response;
+      const normalizedLocation = location?.toLowerCase().trim();
+
+      switch (activeTab) {
+        case 'available':
+          response = await taskAPI.getAvailableTasks(normalizedLocation);
+          break;
+        case 'applied':
+          response = await taskAPI.getAppliedTasks();
+          break;
+        case 'saved':
+          response = await taskAPI.getSavedTasks();
+          break;
+        case 'ongoing':
+          response = await taskAPI.getOngoingTasks();
+          break;
+        case 'completed':
+          response = await taskAPI.getCompletedTasks();
+          break;
+        default:
+          response = await taskAPI.getAvailableTasks(normalizedLocation);
       }
-    };
-    
-    // Run once on initial load
-    handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isMobile]);
 
-  const toggleControlsPanel = () => {
-    setShowControlsPanel(!showControlsPanel);
-  };
+      if (response.success) {
+        const taskArray = Array.isArray(response.data) ? response.data : [];
+        console.log(`Fetched ${taskArray.length} tasks from backend`, taskArray);
+        setTasks(taskArray);
+      } else {
+        throw new Error(response.message || 'Failed to fetch tasks');
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to fetch tasks';
+      setError(errorMsg);
+      toast.error(errorMsg);
 
-  const allTasks = [ 
-    { id: 1, type: "time-based", title: "Technical Writing Assistance", budget: 1500, deadline: "2025-03-25", duration: "10 hours", description: "Help with technical documentation for a software project.", category: "Writing", employer: "TechDocs Inc.", location: "Remote", skills: ["Technical Writing", "API Documentation"], requirements: "2+ years experience." }, 
-    { id: 2, type: "regular", title: "House Cleaning Service", budget: 800, deadline: "2025-03-22", duration: null, description: "Deep cleaning for a 2BHK apartment.", category: "Cleaning", employer: "John Smith", location: "Mumbai", skills: ["Cleaning"], requirements: "Experience in professional cleaning services." }, 
-    { id: 3, type: "time-based", title: "Personal Driving Assistant", budget: 2000, deadline: "2025-03-28", duration: "20 hours", description: "Need a driver for daily commute.", category: "Driving", employer: "Emily Johnson", location: "Delhi", skills: ["Driving"], requirements: "Valid license, 3+ years experience." } 
-  ];
-
-  const getFilteredTasks = () => {
-    switch (selectedTab) {
-      case "newTasks":
-        return allTasks.filter(task => !appliedTasks.includes(task.id) && !savedTasks.includes(task.id));
-      case "appliedTasks":
-        return allTasks.filter(task => appliedTasks.includes(task.id));
-      case "savedTasks":
-        return allTasks.filter(task => savedTasks.includes(task.id));
-      default:
-        return [];
+      if (err.response?.status === 401) {
+        navigate('/');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredTasks = getFilteredTasks().sort((a, b) => {
-    if (sortOrder === "deadline") return new Date(a.deadline) - new Date(b.deadline);
-    if (sortOrder === "lowToHigh") return a.budget - b.budget;
-    return b.budget - a.budget;
-  }).filter(task => {
-    if (filterType === "all") return true;
-    return task.type === filterType;
-  });
+  const handleApplyTask = async (taskId) => {
+    try {
+      setLoading(true);
+      const response = await taskAPI.applyForTask(taskId);
+      if (response.success) {
+        toast.success('Application submitted successfully');
+        fetchTasks();
+      } else {
+        throw new Error(response.message || 'Failed to apply for task');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to apply for task');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const searchFilteredTasks = filteredTasks.filter(task =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.employer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSaveTask = async (taskId) => {
+    try {
+      setLoading(true);
+      const response = await taskAPI.saveTask(taskId);
+      if (response.success) {
+        toast.success('Task saved successfully');
+        fetchTasks();
+      } else {
+        throw new Error(response.message || 'Failed to save task');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to save task');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationInput(`lat:${pos.coords.latitude.toFixed(3)} lng:${pos.coords.longitude.toFixed(3)}`);
+      },
+      () => alert("Unable to retrieve your location.")
+    );
+  };
+
+  const handleSaveLocation = () => {
+    const normalized = locationInput.toLowerCase().trim();
+    setLocation(normalized);
+    setShowLocationModal(false);
+    fetchTasks();
+  };
 
   const handleTaskClick = (task) => {
     setSelectedTask(task);
-    setShowModal(true);
+    setIsModalOpen(true);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
     setSelectedTask(null);
   };
 
-  const handleApplyClick = (e, taskId) => {
-    e.stopPropagation();
-    if (!appliedTasks.includes(taskId)) {
-      setAppliedTasks([...appliedTasks, taskId]);
+  const filteredTasks = tasks.filter(task => {
+    const taskLocation = task.location?.coordinates?.join(',') || task.workLocation || '';
+    if (!searchQuery) return true;
+    return (
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      taskLocation.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  const renderAvailableTasks = () => (
+    <div className="task-list">
+      {filteredTasks.length > 0 ? (
+        filteredTasks.map(task => (
+          <div
+            key={task._id}
+            className="task-card"
+            onClick={() => handleTaskClick(task)}
+          >
+            <h3>{task.title || task.jobType || "Untitled Task"}</h3>
+            <p>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</p>
+            <div className="task-card-footer">
+              <span>
+                Location: {task.location?.coordinates
+                  ? `Lat: ${task.location.coordinates[1]}, Lng: ${task.location.coordinates[0]}`
+                  : task.workLocation || 'Remote'}
+              </span>
+              <span>Budget: ₹{task.budget || task.budgetPerHour || 'Negotiable'}</span>
+            </div>
+            <div className="task-card-actions">
+              <button
+                className="primary-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApplyTask(task._id);
+                }}
+              >
+                Apply
+              </button>
+              <button
+                className="secondary-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveTask(task._id);
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p>No available tasks found in your area. Try changing your location.</p>
+      )}
+    </div>
+  );
+
+  const renderMainContent = () => {
+    switch (activeTab) {
+      case 'available':
+        return renderAvailableTasks();
+      default:
+        return renderAvailableTasks();
     }
   };
-
-  const handleSaveClick = (e, taskId) => {
-    e.stopPropagation();
-    if (!savedTasks.includes(taskId)) {
-      setSavedTasks([...savedTasks, taskId]);
-    }
-  };
-
-  const handleWithdrawClick = (e, taskId) => {
-    e.stopPropagation();
-    setAppliedTasks(appliedTasks.filter(id => id !== taskId));
-  };
-
-  const handleUnsaveClick = (e, taskId) => {
-    e.stopPropagation();
-    setSavedTasks(savedTasks.filter(id => id !== taskId));
-  };
-
-  const getTabTitle = () => {
-    switch (selectedTab) {
-      case "newTasks": return "Available Tasks";
-      case "appliedTasks": return "Your Applied Tasks";
-      case "savedTasks": return "Your Saved Tasks";
-      default: return "Tasks";
-    }
-  };
-
-  useEffect(() => {
-    document.body.style.overflow = showModal ? 'hidden' : 'auto';
-    return () => { document.body.style.overflow = 'auto'; };
-  }, [showModal]);
 
   return (
-    <div>
-      <h1 className="Headline">TASK MANAGEMENT DASHBOARD</h1>
-      <div className="dashboard-container">
-        {isMobile && (
-          <button className="task-list-toggle" onClick={toggleControlsPanel}>
-            {showControlsPanel ? "←" : "→"}
+    <div className="dashboard-container">
+      {loading && <div className="loading-overlay">Loading...</div>}
+      {error && <div className="error-message">{error}</div>}
+
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <h1>Task Receiver</h1>
+          <p>Welcome, {user?.name || 'User'}!</p>
+        </div>
+        <nav className="sidebar-nav">
+          <button className={`nav-item ${activeTab === 'available' ? 'active' : ''}`} onClick={() => setActiveTab('available')}>🧭 Available Tasks</button>
+          {/* More tabs like applied, saved, ongoing can go here */}
+          <button className="nav-item location-item" onClick={() => setShowLocationModal(true)}>
+            📍 {location || 'Set Location'}
           </button>
-        )}
-
-        <div className={`controls-panel ${showControlsPanel ? 'show' : ''}`}>
-          <h2 className="sidebar-title">Manage Your Tasks</h2>
-          <div className="tabs">
-            <button className={selectedTab === "newTasks" ? "active" : ""} onClick={() => setSelectedTab("newTasks")}>📂 New Tasks</button>
-            <button className={selectedTab === "appliedTasks" ? "active" : ""} onClick={() => setSelectedTab("appliedTasks")}>✅ Applied Tasks</button>
-            <button className={selectedTab === "savedTasks" ? "active" : ""} onClick={() => setSelectedTab("savedTasks")}>🔖 Saved Tasks</button>
-          </div>
-
-          <div className="search-filter-container">
-            <input type="text" placeholder="🔍 Search tasks..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="search-bar" />
-            <div className="filters">
-              <label>🗕 Sort by:</label>
-              <select onChange={(e) => setSortOrder(e.target.value)} value={sortOrder}>
-                <option value="deadline">Deadline</option>
-                <option value="lowToHigh">Budget: Low to High</option>
-                <option value="highToLow">Budget: High to Low</option>
-              </select>
-            </div>
-            <div className="filters">
-              <label>🏷 Filter by Task Type:</label>
-              <select onChange={(e) => setFilterType(e.target.value)} value={filterType}>
-                <option value="all">All Types</option>
-                <option value="regular">Regular Tasks</option>
-                <option value="time-based">Time-Based Tasks</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="task-list-panel">
-          <h2 className="panel-title">{getTabTitle()}</h2>
-          <div className="task-list">
-            {searchFilteredTasks.length > 0 ? (
-              searchFilteredTasks.map(task => (
-                <div key={task.id} className={`task-card ${selectedTask?.id === task.id ? "selected" : ""}`} onClick={() => handleTaskClick(task)}>
-                  <div className="task-card-header">
-                    <span className={`task-type-badge ${task.type}`}>
-                      {task.type === "time-based" ? "Time-Based" : "Regular Task"}
-                    </span>
-                    <h3>{task.title}</h3>
-                  </div>
-                  <div className="task-card-info">
-                    <p><strong>💰 Budget:</strong> ₹{task.budget}</p>
-                    <p><strong>🕒 Deadline:</strong> {task.deadline}</p>
-                    {task.duration && <p><strong>⏳ Duration:</strong> {task.duration}</p>}
-                    <p><strong>👤 Employer:</strong> {task.employer}</p>
-                  </div>
-                  <div className="task-action-buttons">
-                    {selectedTab === "newTasks" && (
-                      <>
-                        <button className="apply-button" onClick={(e) => handleApplyClick(e, task.id)}>Apply</button>
-                        <button className="save-button" onClick={(e) => handleSaveClick(e, task.id)}>Save</button>
-                      </>
-                    )}
-                    {selectedTab === "appliedTasks" && (
-                      <button className="withdraw-button" onClick={(e) => handleWithdrawClick(e, task.id)}>Withdraw</button>
-                    )}
-                    {selectedTab === "savedTasks" && (
-                      <>
-                        <button className="apply-button" onClick={(e) => handleApplyClick(e, task.id)}>Apply</button>
-                        <button className="unsave-button" onClick={(e) => handleUnsaveClick(e, task.id)}>Unsave</button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="no-tasks-message">
-                <p>No tasks found matching your search.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {showModal && selectedTask && (
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <button className="modal-close" onClick={closeModal}>×</button>
-              <div className="modal-header">
-                <span className={`task-type-badge ${selectedTask.type}`}>
-                  {selectedTask.type === "time-based" ? "Time-Based" : "Regular Task"}
-                </span>
-                <h2>{selectedTask.title}</h2>
-                <p className="task-category">{selectedTask.category}</p>
-              </div>
-              <div className="modal-body">
-                <div className="modal-section">
-                  <h3>Description</h3>
-                  <p>{selectedTask.description}</p>
-                </div>
-                <div className="modal-section modal-details">
-                  <div className="detail-item"><span className="detail-label">💰 Budget</span><span className="detail-value">₹{selectedTask.budget}</span></div>
-                  <div className="detail-item"><span className="detail-label">🕒 Deadline</span><span className="detail-value">{selectedTask.deadline}</span></div>
-                  {selectedTask.duration && <div className="detail-item"><span className="detail-label">⏳ Duration</span><span className="detail-value">{selectedTask.duration}</span></div>}
-                  <div className="detail-item"><span className="detail-label">👤 Employer</span><span className="detail-value">{selectedTask.employer}</span></div>
-                  <div className="detail-item"><span className="detail-label">📍 Location</span><span className="detail-value">{selectedTask.location}</span></div>
-                </div>
-                <div className="modal-section">
-                  <h3>Required Skills</h3>
-                  <div className="skills-list">
-                    {selectedTask.skills.map((skill, index) => (
-                      <span key={index} className="skill-tag">{skill}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <h3>Requirements</h3>
-                  <p>{selectedTask.requirements}</p>
-                </div>
-              </div>
-              <div className="modal-footer">
-                {!appliedTasks.includes(selectedTask.id) && (
-                  <button className="apply-button modal-button" onClick={(e) => { handleApplyClick(e, selectedTask.id); closeModal(); }}>Apply for this Task</button>
-                )}
-                {!savedTasks.includes(selectedTask.id) ? (
-                  <button className="save-button modal-button" onClick={(e) => { handleSaveClick(e, selectedTask.id); closeModal(); }}>Save for Later</button>
-                ) : (
-                  <button className="unsave-button modal-button" onClick={(e) => { handleUnsaveClick(e, selectedTask.id); closeModal(); }}>Remove from Saved</button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        </nav>
       </div>
+
+      <main className="main-content">
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        {renderMainContent()}
+      </main>
+
+      {showLocationModal && (
+        <div className="modal-overlay" onClick={() => setShowLocationModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowLocationModal(false)}>×</button>
+            <h2>Set Your Location</h2>
+            <div className="modal-body">
+              <input
+                type="text"
+                placeholder="Enter your location"
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+              />
+              <button className="secondary-button" onClick={handleUseMyLocation}>Use My Current Location</button>
+              <div className="modal-actions">
+                <button className="primary-button" onClick={handleSaveLocation} disabled={!locationInput}>Save Location</button>
+                <button className="secondary-button" onClick={() => setShowLocationModal(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default TaskManagement;
+export default TaskReceiverDashboard;

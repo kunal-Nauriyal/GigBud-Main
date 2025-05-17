@@ -7,11 +7,11 @@ import Blacklist from '../models/blacklist.js';
 // ✅ Helper function to generate both tokens
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '15m', // short-lived
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m', // fallback
   });
 
   const refreshToken = jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: '7d', // long-lived
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d', // fallback
   });
 
   return { accessToken, refreshToken };
@@ -167,7 +167,7 @@ export const refreshToken = async (req, res) => {
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const newAccessToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, {
-      expiresIn: '15m'
+      expiresIn: process.env.JWT_EXPIRES_IN || '15m'
     });
 
     return res.status(200).json({

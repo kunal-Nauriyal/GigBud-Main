@@ -1,215 +1,564 @@
-import React, { useState } from "react";
-import "./TaskForm.css";
+import React, { useState, useEffect } from "react";
+import { taskAPI } from '../services/api';
+import "./Taskform.css";
 
-const TaskForm = ({ onClose, onTaskCreated }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    deadline: "",
-    timeRequirement: "",
-    budgetPerHour: "",
-    lat: "",
-    lng: "",
-    mode: "remote",
-    notes: "",
-    role: "buyer",
-  });
+const initialNormalTask = {
+  title: "",
+  description: "",
+  deadline: "",
+  budget: "",
+  location: "Online",
+  contact: "Chat",
+  // New fields for location coordinates
+  locationType: "Point",
+  coordinates: [0, 0],
+  showMap: false
+};
 
+const initialTimeBuyerTask = {
+  timeRequirement: "",
+  jobType: "",
+  skills: [],
+  workMode: "Online",
+  workLocation: "",
+  budgetPerHour: "",
+  additionalNotes: "",
+  // New fields for location coordinates
+  locationType: "Point",
+  coordinates: [0, 0],
+  showMap: false
+};
+
+const skillOptions = [
+  "Communication",
+  "Technical",
+  "Cooking",
+  "Driving",
+  "Writing",
+  "Cleaning",
+];
+
+const TaskForm = ({ onClose }) => {
+  const [taskType, setTaskType] = useState("normal");
+  const [formData, setFormData] = useState(initialNormalTask);
+  const [timeBuyerData, setTimeBuyerData] = useState(initialTimeBuyerTask);
   const [selectedFile, setSelectedFile] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
 
+  useEffect(() => {
+    if (taskType === "normal") validateNormalTask();
+    else validateTimeBuyerTask();
+    // eslint-disable-next-line
+  }, [formData, timeBuyerData, taskType]);
+
+  // --- Normal Task Handlers ---
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    
+    if (name === "location") {
+      setFormData({ 
+        ...formData, 
+        [name]: value,
+        showMap: value === "In-Person"
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
   };
 
-  const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
-  const handleFileRemove = () => setSelectedFile(null);
+  const handleCoordinateChange = (index, value) => {
+    const newCoordinates = [...formData.coordinates];
+    newCoordinates[index] = parseFloat(value) || 0;
+    setFormData({ ...formData, coordinates: newCoordinates });
+  };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = "Task Title is required.";
-    if (!formData.description.trim()) newErrors.description = "Task Description is required.";
-    if (!formData.deadline) newErrors.deadline = "Deadline is required.";
-    if (!formData.timeRequirement || formData.timeRequirement <= 0)
-      newErrors.timeRequirement = "Valid time (hours) is required.";
-    if (!formData.budgetPerHour || formData.budgetPerHour <= 0)
-      newErrors.budgetPerHour = "Valid hourly budget is required.";
-    if (!formData.role) newErrors.role = "Role is required.";
-    if (formData.mode === "on-site") {
-      if (!formData.lat.trim()) newErrors.lat = "Latitude is required.";
-      if (!formData.lng.trim()) newErrors.lng = "Longitude is required.";
+  // --- Time Buyer Handlers ---
+  const handleTimeBuyerChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    if (name === "workMode") {
+      setTimeBuyerData({ 
+        ...timeBuyerData, 
+        [name]: value,
+        showMap: value === "In-Person"
+      });
+    } else if (type === "checkbox") {
+      setTimeBuyerData((prev) => ({
+        ...prev,
+        skills: checked
+          ? [...prev.skills, value]
+          : prev.skills.filter((skill) => skill !== value),
+      }));
+    } else {
+      setTimeBuyerData({ ...timeBuyerData, [name]: value });
+    }
+    
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
+  };
+
+  const handleTimeBuyerCoordinateChange = (index, value) => {
+    const newCoordinates = [...timeBuyerData.coordinates];
+    newCoordinates[index] = parseFloat(value) || 0;
+    setTimeBuyerData({ ...timeBuyerData, coordinates: newCoordinates });
+  };
+
+  // --- File Handlers ---
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleFileRemove = (e) => {
+    e.preventDefault();
+    setSelectedFile(null);
+  };
+
+  // --- Validation ---
+  const validateNormalTask = () => {
+    let newErrors = {};
+    if (!formData.title?.trim()) newErrors.title = "Task Title is required.";
+    if (!formData.description?.trim()) newErrors.description = "Task Description is required.";
+    if (!formData.deadline) {
+      newErrors.deadline = "Deadline is required.";
+    } else {
+      const deadlineDate = new Date(formData.deadline);
+      if (deadlineDate <= new Date()) {
+        newErrors.deadline = "Deadline must be in the future.";
+      }
+    }
+    if (!formData.budget || isNaN(formData.budget) || parseFloat(formData.budget) <= 0) {
+      newErrors.budget = "Valid budget amount is required.";
+    }
+    if (formData.location === "In-Person") {
+      if (!formData.coordinates || formData.coordinates.length !== 2) {
+        newErrors.coordinates = "Valid coordinates are required.";
+      }
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setIsFormValid(Object.keys(newErrors).length === 0);
   };
 
+  const validateTimeBuyerTask = () => {
+    let newErrors = {};
+    if (!timeBuyerData.timeRequirement?.trim()) newErrors.timeRequirement = "Time Requirement is required.";
+    if (!timeBuyerData.jobType?.trim()) newErrors.jobType = "Job Type is required.";
+    if (timeBuyerData.workMode === "In-Person") {
+      if (!timeBuyerData.workLocation?.trim()) {
+        newErrors.workLocation = "Location is required.";
+      }
+      if (!timeBuyerData.coordinates || timeBuyerData.coordinates.length !== 2) {
+        newErrors.coordinates = "Valid coordinates are required.";
+      }
+    }
+    if (!timeBuyerData.budgetPerHour?.trim() || timeBuyerData.budgetPerHour <= 0)
+      newErrors.budgetPerHour = "Valid budget is required.";
+    setErrors(newErrors);
+    setIsFormValid(Object.keys(newErrors).length === 0);
+  };
+
+  // --- Submit ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      alert("Please fill all required fields.");
+    if (!isFormValid) {
+      alert("Please fill all required fields! ⚠️");
       return;
     }
 
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        alert("You must be logged in to create a task.");
-        window.location.href = "/login";
-        return;
-      }
-
-      const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        payload.append(key, value);
-      });
-      if (selectedFile) payload.append("attachment", selectedFile);
-
-      const response = await fetch("http://localhost:3000/api/tasks/task/create", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: payload,
-      });
-
-      const result = await response.json();
+      const currentDate = new Date();
+      const formattedCurrentDate = currentDate.toISOString().split('T')[0];
       
-      if (response.ok) {
-        alert("Task successfully submitted!");
-        onTaskCreated(result.data);
-        setFormData({
-          title: "",
-          description: "",
-          deadline: "",
-          timeRequirement: "",
-          budgetPerHour: "",
-          lat: "",
-          lng: "",
-          mode: "remote",
-          notes: "",
-          role: "buyer",
-        });
-        setSelectedFile(null);
+      let taskData = {};
+      
+      if (taskType === "normal") {
+        taskData = {
+          taskType,
+          title: formData.title,
+          description: formData.description,
+          deadline: formData.deadline,
+          budget: formData.budget,
+          contact: formData.contact,
+          postedDate: formattedCurrentDate,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          displayName: formData.title,
+          displayDate: formattedCurrentDate,
+          // Updated location handling
+          location: formData.location === "In-Person" ? {
+            type: "Point",
+            coordinates: formData.coordinates
+          } : "Online"
+        };
       } else {
-        if (response.status === 401) {
-          localStorage.removeItem("accessToken");
-          window.location.href = "/login";
-          return;
+        const skillsString = timeBuyerData.skills.join(", ");
+        
+        taskData = {
+          taskType,
+          title: timeBuyerData.jobType,
+          description: `${timeBuyerData.timeRequirement} ${timeBuyerData.jobType} work requiring ${skillsString} skills.${timeBuyerData.additionalNotes ? " " + timeBuyerData.additionalNotes : ""}`,
+          budget: timeBuyerData.budgetPerHour,
+          deadline: new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          postedDate: formattedCurrentDate,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          displayName: timeBuyerData.jobType,
+          displayDate: formattedCurrentDate,
+          timeRequirement: timeBuyerData.timeRequirement,
+          jobType: timeBuyerData.jobType,
+          skills: timeBuyerData.skills,
+          workMode: timeBuyerData.workMode,
+          workLocation: timeBuyerData.workMode === "In-Person" ? timeBuyerData.workLocation : "Online",
+          budgetPerHour: timeBuyerData.budgetPerHour,
+          additionalNotes: timeBuyerData.additionalNotes,
+          // Updated location handling
+          location: timeBuyerData.workMode === "In-Person" ? {
+            type: "Point",
+            coordinates: timeBuyerData.coordinates
+          } : "Online"
+        };
+      }
+
+      // Clean up undefined values
+      Object.keys(taskData).forEach(key => {
+        if (taskData[key] === undefined) {
+          delete taskData[key];
         }
-        alert("Failed to submit task: " + (result.message || "Unknown error"));
+      });
+
+      const formDataToSend = new FormData();
+      
+      Object.keys(taskData).forEach(key => {
+        if (key === 'skills' && Array.isArray(taskData[key])) {
+          formDataToSend.append(key, JSON.stringify(taskData[key]));
+        } else if (key === 'deadline' && taskData[key]) {
+          formDataToSend.append(key, new Date(taskData[key]).toISOString());
+        } else if (taskData[key] != null) {
+          // Handle nested location object
+          if (key === 'location' && typeof taskData[key] === 'object') {
+            formDataToSend.append('location[type]', taskData[key].type);
+            formDataToSend.append('location[coordinates]', JSON.stringify(taskData[key].coordinates));
+          } else {
+            formDataToSend.append(key, taskData[key]);
+          }
+        }
+      });
+
+      if (taskType === "normal" && selectedFile) {
+        formDataToSend.append("attachment", selectedFile);
       }
-    } catch (err) {
-      console.error("Error submitting task:", err);
-      if (err.message.includes("401")) {
-        localStorage.removeItem("accessToken");
-        window.location.href = "/login";
-        return;
-      }
-      alert("Something went wrong while submitting the task.");
+
+      console.log('Sending task data:', {
+        ...Object.fromEntries(formDataToSend.entries())
+      });
+
+      const response = await taskAPI.createTask(formDataToSend);
+      console.log('Server response:', response);
+
+      alert("Task successfully submitted! ✅");
+      setFormData(initialNormalTask);
+      setTimeBuyerData(initialTimeBuyerTask);
+      setSelectedFile(null);
+      setErrors({});
+      onClose();
+    } catch (error) {
+      console.error("Task creation error:", error.response?.data || error);
+      alert(error.response?.data?.message || error.message || "Failed to create task! ⚠️");
     }
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal-container">
-        <div className="modal-header">
-          <h2>Post Your Task</h2>
-          <span className="close-button" onClick={onClose}>×</span>
+      <div className="modal-container taskform-modern-container">
+        <div className="modal-header taskform-header">
+          <h2>📝 Post a New Task</h2>
+          <span className="close-button" onClick={onClose}>✖</span>
         </div>
-        <form className="task-form" onSubmit={handleSubmit}>
-          <input
-            name="title"
-            placeholder="Task Title"
-            value={formData.title}
-            onChange={handleChange}
-          />
-          {errors.title && <p className="error">{errors.title}</p>}
-
-          <textarea
-            name="description"
-            placeholder="Task Description"
-            value={formData.description}
-            onChange={handleChange}
-          />
-          {errors.description && <p className="error">{errors.description}</p>}
-
-          <input
-            type="datetime-local"
-            name="deadline"
-            value={formData.deadline}
-            onChange={handleChange}
-          />
-          {errors.deadline && <p className="error">{errors.deadline}</p>}
-
-          <select name="mode" value={formData.mode} onChange={handleChange}>
-            <option value="remote">Online</option>
-            <option value="on-site">In Person</option>
-          </select>
-
-          {formData.mode === "on-site" && (
-            <>
-              <input
-                name="lat"
-                placeholder="Latitude"
-                value={formData.lat}
-                onChange={handleChange}
-              />
-              {errors.lat && <p className="error">{errors.lat}</p>}
-
-              <input
-                name="lng"
-                placeholder="Longitude"
-                value={formData.lng}
-                onChange={handleChange}
-              />
-              {errors.lng && <p className="error">{errors.lng}</p>}
-            </>
-          )}
-
-          <input
-            type="number"
-            name="timeRequirement"
-            placeholder="Time in hours"
-            value={formData.timeRequirement}
-            onChange={handleChange}
-          />
-          {errors.timeRequirement && <p className="error">{errors.timeRequirement}</p>}
-
-          <input
-            type="number"
-            name="budgetPerHour"
-            placeholder="INR/hour"
-            value={formData.budgetPerHour}
-            onChange={handleChange}
-          />
-          {errors.budgetPerHour && <p className="error">{errors.budgetPerHour}</p>}
-
-          <textarea
-            name="notes"
-            placeholder="Extra notes"
-            value={formData.notes}
-            onChange={handleChange}
-          />
-
-          <select name="role" value={formData.role} onChange={handleChange}>
-            <option value="buyer">Buyer</option>
-            <option value="provider">Provider</option>
-          </select>
-          {errors.role && <p className="error">{errors.role}</p>}
-
-          <input type="file" onChange={handleFileChange} />
-          {selectedFile && (
-            <div>
-              <span>{selectedFile.name}</span>
-              <button type="button" onClick={handleFileRemove}>Remove</button>
+        <div className="modal-content taskform-content">
+          <form className="task-form" onSubmit={handleSubmit} autoComplete="off">
+            {/* Task Type Selection */}
+            <div className="form-section">
+              <h3 className="section-title">What do you want to post?</h3>
+              <div className="task-type-row">
+                <label className="task-type-radio">
+                  <input
+                    type="radio"
+                    name="taskType"
+                    value="normal"
+                    checked={taskType === "normal"}
+                    onChange={() => setTaskType("normal")}
+                  />
+                  Normal Task
+                </label>
+                <label className="task-type-radio">
+                  <input
+                    type="radio"
+                    name="taskType"
+                    value="timebuyer"
+                    checked={taskType === "timebuyer"}
+                    onChange={() => setTaskType("timebuyer")}
+                  />
+                  Book Someone's Time
+                </label>
+              </div>
             </div>
-          )}
 
-          <button type="submit">Submit</button>
-        </form>
+            {/* Normal Task Form */}
+            {taskType === "normal" && (
+              <>
+                <div className="form-section">
+                  <h3 className="section-title">Task Details</h3>
+                  <div className="form-group">
+                    <label htmlFor="title">Task Title <span className="required">*</span></label>
+                    <input
+                      id="title"
+                      type="text"
+                      name="title"
+                      placeholder="E.g., Grocery Shopping"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className={errors.title ? "input-error" : ""}
+                    />
+                    {errors.title && <p className="error-text">{errors.title}</p>}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="description">Task Description <span className="required">*</span></label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      placeholder="Describe the task briefly"
+                      value={formData.description}
+                      onChange={handleChange}
+                      className={errors.description ? "input-error" : ""}
+                      rows={4}
+                    />
+                    {errors.description && <p className="error-text">{errors.description}</p>}
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h3 className="section-title">Task Logistics</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="location">Location</label>
+                      <select 
+                        id="location" 
+                        name="location" 
+                        value={formData.location} 
+                        onChange={handleChange}
+                      >
+                        <option>Online</option>
+                        <option>In-Person</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="deadline">Deadline <span className="required">*</span></label>
+                      <input
+                        id="deadline"
+                        type="datetime-local"
+                        name="deadline"
+                        value={formData.deadline}
+                        onChange={handleChange}
+                        className={errors.deadline ? "input-error" : ""}
+                      />
+                      {errors.deadline && <p className="error-text">{errors.deadline}</p>}
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="budget">Budget (INR) <span className="required">*</span></label>
+                      <input
+                        id="budget"
+                        type="number"
+                        name="budget"
+                        placeholder="Amount in INR"
+                        value={formData.budget}
+                        onChange={handleChange}
+                        className={errors.budget ? "input-error" : ""}
+                      />
+                      {errors.budget && <p className="error-text">{errors.budget}</p>}
+                    </div>
+                  </div>
+
+                  {/* Location Coordinates for In-Person tasks */}
+                  {formData.showMap && (
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Latitude <span className="required">*</span></label>
+                        <input
+                          type="number"
+                          value={formData.coordinates[1]}
+                          onChange={(e) => handleCoordinateChange(1, e.target.value)}
+                          className={errors.coordinates ? "input-error" : ""}
+                          step="any"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Longitude <span className="required">*</span></label>
+                        <input
+                          type="number"
+                          value={formData.coordinates[0]}
+                          onChange={(e) => handleCoordinateChange(0, e.target.value)}
+                          className={errors.coordinates ? "input-error" : ""}
+                          step="any"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {errors.coordinates && <p className="error-text">{errors.coordinates}</p>}
+                </div>
+
+                {/* File Attachment Section - Only for Normal Task */}
+                <div className="form-section">
+                  <h3 className="section-title">Attachment (Optional)</h3>
+                  <div className="form-group attachment-group-modern">
+                    <label htmlFor="attachment" className="attachment-label">
+                      <span className="attachment-icon">📎</span> Upload File
+                    </label>
+                    <div className="file-upload-modern">
+                      <input id="attachment" type="file" onChange={handleFileChange} />
+                      {selectedFile && (
+                        <div className="file-preview-modern">
+                          <span>{selectedFile.name}</span>
+                          <button className="delete-file-button" onClick={handleFileRemove}>❌</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Time Buyer Form */}
+            {taskType === "timebuyer" && (
+              <>
+                <div className="form-section">
+                  <h3 className="section-title">Time Booking Details</h3>
+                  <div className="form-group">
+                    <label>Time Requirement <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      name="timeRequirement"
+                      placeholder="Select hours or days"
+                      value={timeBuyerData.timeRequirement}
+                      onChange={handleTimeBuyerChange}
+                      className={errors.timeRequirement ? "input-error" : ""}
+                    />
+                    {errors.timeRequirement && <p className="error-text">{errors.timeRequirement}</p>}
+                  </div>
+                  <div className="form-group">
+                    <label>Job Type <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      name="jobType"
+                      placeholder="E.g., Personal Assistance, Technical Work"
+                      value={timeBuyerData.jobType}
+                      onChange={handleTimeBuyerChange}
+                      className={errors.jobType ? "input-error" : ""}
+                    />
+                    {errors.jobType && <p className="error-text">{errors.jobType}</p>}
+                  </div>
+                  <div className="form-group">
+                    <label>Preferred Skills</label>
+                    <div className="checkbox-group">
+                      {skillOptions.map((skill) => (
+                        <label key={skill} className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            value={skill}
+                            checked={timeBuyerData.skills.includes(skill)}
+                            onChange={handleTimeBuyerChange}
+                          />
+                          {skill}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Work Mode</label>
+                    <select 
+                      name="workMode" 
+                      value={timeBuyerData.workMode} 
+                      onChange={handleTimeBuyerChange}
+                    >
+                      <option>Online</option>
+                      <option>In-Person</option>
+                    </select>
+                  </div>
+                  {timeBuyerData.workMode === "In-Person" && (
+                    <>
+                      <div className="form-group">
+                        <label>Location Address <span className="required">*</span></label>
+                        <input
+                          type="text"
+                          name="workLocation"
+                          placeholder="Enter location address"
+                          value={timeBuyerData.workLocation}
+                          onChange={handleTimeBuyerChange}
+                          className={errors.workLocation ? "input-error" : ""}
+                        />
+                        {errors.workLocation && <p className="error-text">{errors.workLocation}</p>}
+                      </div>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Latitude <span className="required">*</span></label>
+                          <input
+                            type="number"
+                            value={timeBuyerData.coordinates[1]}
+                            onChange={(e) => handleTimeBuyerCoordinateChange(1, e.target.value)}
+                            className={errors.coordinates ? "input-error" : ""}
+                            step="any"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Longitude <span className="required">*</span></label>
+                          <input
+                            type="number"
+                            value={timeBuyerData.coordinates[0]}
+                            onChange={(e) => handleTimeBuyerCoordinateChange(0, e.target.value)}
+                            className={errors.coordinates ? "input-error" : ""}
+                            step="any"
+                          />
+                        </div>
+                      </div>
+                      {errors.coordinates && <p className="error-text">{errors.coordinates}</p>}
+                    </>
+                  )}
+                  <div className="form-group">
+                    <label>Budget per Hour <span className="required">*</span></label>
+                    <input
+                      type="number"
+                      name="budgetPerHour"
+                      placeholder="Enter budget"
+                      value={timeBuyerData.budgetPerHour}
+                      onChange={handleTimeBuyerChange}
+                      className={errors.budgetPerHour ? "input-error" : ""}
+                    />
+                    {errors.budgetPerHour && <p className="error-text">{errors.budgetPerHour}</p>}
+                  </div>
+                  <div className="form-group">
+                    <label>Additional Notes (Optional)</label>
+                    <textarea
+                      name="additionalNotes"
+                      placeholder="Any special instructions..."
+                      value={timeBuyerData.additionalNotes}
+                      onChange={handleTimeBuyerChange}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="form-actions">
+              <button type="button" className="secondary-button" onClick={onClose}>
+                Cancel
+              </button>
+              <button type="submit" className="submit-button" disabled={!isFormValid}>
+                Post Task
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

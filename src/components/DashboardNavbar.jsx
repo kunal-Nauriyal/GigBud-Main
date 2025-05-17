@@ -8,7 +8,10 @@ const DashboardNavbar = () => {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  if (!isLoggedIn) return null; // Hide navbar if not logged in
+  // This is a critical check - if not logged in, don't render anything
+  if (!isLoggedIn) {
+    return null;
+  }
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -23,17 +26,10 @@ const DashboardNavbar = () => {
             to="/task-provider-dashboard"
             className={`dashboard-link ${location.pathname === "/task-provider-dashboard" ? "active" : ""}`}
           >
-            Provider Dashboard
+           Task Provider Dashboard
           </Link>
         </li>
-        <li>
-          <Link
-            to="/time-buyer-dashboard"
-            className={`dashboard-link ${location.pathname === "/time-buyer-dashboard" ? "active" : ""}`}
-          >
-            Time Buyer Dashboard
-          </Link>
-        </li>
+        
         <li>
           <Link
             to="/task-receiver-dashboard"
@@ -41,6 +37,9 @@ const DashboardNavbar = () => {
           >
             Task Receiver Dashboard
           </Link>
+        </li>
+        <li>
+          
         </li>
       </ul>
 
@@ -59,13 +58,7 @@ const DashboardNavbar = () => {
             >
               Provider Dashboard
             </Link>
-            <Link
-              to="/time-buyer-dashboard"
-              className={`dashboard-dropdown-item ${location.pathname === "/time-buyer-dashboard" ? "active" : ""}`}
-              onClick={toggleDropdown}
-            >
-              Time Buyer Dashboard
-            </Link>
+            
             <Link
               to="/task-receiver-dashboard"
               className={`dashboard-dropdown-item ${location.pathname === "/task-receiver-dashboard" ? "active" : ""}`}
@@ -82,7 +75,7 @@ const DashboardNavbar = () => {
 
 function getActiveDashboardName(pathname) {
   if (pathname === "/task-provider-dashboard") return "Provider Dashboard";
-  if (pathname === "/time-buyer-dashboard") return "Time Buyer Dashboard";
+  //if (pathname === "/time-buyer-dashboard") return "Time Buyer Dashboard";
   if (pathname === "/task-receiver-dashboard") return "Task Receiver Dashboard";
   return "Select Dashboard";
 }

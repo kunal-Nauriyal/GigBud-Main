@@ -14,7 +14,7 @@ function LoginModal({ isOpen, onClose }) {
     } else {
       document.body.classList.remove('modal-open');
     }
-    
+
     // Cleanup on unmount
     return () => {
       document.body.classList.remove('modal-open');
@@ -61,16 +61,25 @@ function LoginModal({ isOpen, onClose }) {
           return;
         }
 
-        const token = data?.data?.accessToken;
+        const accessToken = data?.data?.accessToken;
+        const refreshToken = data?.data?.refreshToken;
 
-        if (!token) {
-          alert("Missing token in response");
-          console.error("Login response missing token:", data);
+        if (!accessToken || !refreshToken) {
+          alert("Missing tokens in response");
+          console.error("Login response missing tokens:", data);
           return;
         }
 
-        localStorage.setItem("accessToken", token);
-        login(token);
+        // Store tokens in localStorage (or sessionStorage if !rememberMe)
+        if (rememberMe) {
+          localStorage.setItem("accessToken", accessToken);
+          localStorage.setItem("refreshToken", refreshToken);
+        } else {
+          sessionStorage.setItem("accessToken", accessToken);
+          sessionStorage.setItem("refreshToken", refreshToken);
+        }
+
+        login(accessToken);
 
         alert("Login successful!");
         onClose();
@@ -79,8 +88,8 @@ function LoginModal({ isOpen, onClose }) {
         console.error("Login error:", err);
         alert("Login error");
       }
-
     } else {
+      // Signup form
       if (signupPassword !== signupConfirmPassword) {
         alert("Passwords do not match!");
         return;
@@ -104,6 +113,11 @@ function LoginModal({ isOpen, onClose }) {
         if (res.ok) {
           alert("Signup successful! Please log in.");
           setIsLoginForm(true);
+          // Optionally clear signup form here
+          setSignupName('');
+          setSignupEmail('');
+          setSignupPassword('');
+          setSignupConfirmPassword('');
         } else {
           alert(data.message || "Signup failed.");
         }
