@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './LoginSignup.css';
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function LoginModal({ isOpen, onClose }) {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
-  // Add useEffect for body scroll management
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('modal-open');
@@ -15,13 +16,11 @@ function LoginModal({ isOpen, onClose }) {
       document.body.classList.remove('modal-open');
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.classList.remove('modal-open');
     };
   }, [isOpen]);
 
-  // Form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupName, setSignupName] = useState('');
@@ -70,7 +69,6 @@ function LoginModal({ isOpen, onClose }) {
           return;
         }
 
-        // Store tokens in localStorage (or sessionStorage if !rememberMe)
         if (rememberMe) {
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", refreshToken);
@@ -82,14 +80,14 @@ function LoginModal({ isOpen, onClose }) {
         login(accessToken);
 
         alert("Login successful!");
-        onClose();
+        onClose(); // Close the modal
+        navigate("/task-receiver-dashboard"); // Navigate to dashboard
 
       } catch (err) {
         console.error("Login error:", err);
         alert("Login error");
       }
     } else {
-      // Signup form
       if (signupPassword !== signupConfirmPassword) {
         alert("Passwords do not match!");
         return;
@@ -113,7 +111,6 @@ function LoginModal({ isOpen, onClose }) {
         if (res.ok) {
           alert("Signup successful! Please log in.");
           setIsLoginForm(true);
-          // Optionally clear signup form here
           setSignupName('');
           setSignupEmail('');
           setSignupPassword('');

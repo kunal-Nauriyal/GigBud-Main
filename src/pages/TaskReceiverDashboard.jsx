@@ -5,6 +5,15 @@ import { taskAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import './TaskReceiverDashboard.css';
 
+// Tab list with icons for sidebar
+const TAB_LIST = [
+  { key: "available", label: "Available Tasks", icon: "🧭" },
+  { key: "applied", label: "Applied Tasks", icon: "✅" },
+  { key: "saved", label: "Saved Tasks", icon: "📌" },
+  { key: "ongoing", label: "Ongoing Tasks", icon: "🚧" },
+  { key: "completed", label: "Completed Tasks", icon: "🏁" },
+];
+
 const TaskReceiverDashboard = () => {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useAuth();
@@ -18,6 +27,9 @@ const TaskReceiverDashboard = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [ratings, setRatings] = useState({});
+  const [sortBy, setSortBy] = useState('deadline');
+  const [filterType, setFilterType] = useState('all');
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -141,38 +153,75 @@ const TaskReceiverDashboard = () => {
     setSelectedTask(null);
   };
 
-  const filteredTasks = tasks.filter(task => {
-    const taskLocation = task.location?.coordinates?.join(',') || task.workLocation || '';
-    if (!searchQuery) return true;
-    return (
-      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      taskLocation.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const handleMarkComplete = async (taskId) => {
+    try {
+      setLoading(true);
+      const response = await taskAPI.completeTask(taskId);
+      if (response.success) {
+        toast.success('Task marked as complete');
+        fetchTasks();
+      } else {
+        throw new Error(response.message || 'Failed to mark task as complete');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to mark task as complete');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleRate = (taskId, rating) => {
+    setRatings({ ...ratings, [taskId]: rating });
+  };
+
+  const filteredTasks = tasks
+    .filter(task => {
+      const taskLocation = task.location?.coordinates?.join(',') || task.workLocation || '';
+      if (!searchQuery) return true;
+      return (
+        task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        taskLocation.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    })
+    .filter(task => {
+      if (filterType === 'all') return true;
+      return task.type === filterType;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'deadline') return new Date(a.deadline) - new Date(b.deadline);
+      if (sortBy === 'budgetHigh') return (b.budget || b.budgetPerHour || 0) - (a.budget || a.budgetPerHour || 0);
+      if (sortBy === 'budgetLow') return (a.budget || a.budgetPerHour || 0) - (b.budget || b.budgetPerHour || 0);
+      return 0;
+    });
+
+  // Task List Panels
   const renderAvailableTasks = () => (
-    <div className="task-list">
+    <div className="gigbud-task-list">
       {filteredTasks.length > 0 ? (
         filteredTasks.map(task => (
           <div
             key={task._id}
-            className="task-card"
+            className="gigbud-task-card"
             onClick={() => handleTaskClick(task)}
           >
-            <h3>{task.title || task.jobType || "Untitled Task"}</h3>
-            <p>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</p>
-            <div className="task-card-footer">
-              <span>
-                Location: {task.location?.coordinates
+            <div className="task-title-row">
+              <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
+              <span className="task-location">
+                {task.location?.coordinates
                   ? `Lat: ${task.location.coordinates[1]}, Lng: ${task.location.coordinates[0]}`
                   : task.workLocation || 'Remote'}
               </span>
-              <span>Budget: ₹{task.budget || task.budgetPerHour || 'Negotiable'}</span>
             </div>
-            <div className="task-card-actions">
+            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-meta">
+              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
+              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
+              <span>Type: <b>{task.type || 'Regular'}</b></span>
+            </div>
+            <div className="task-actions" onClick={(e) => e.stopPropagation()}>
               <button
-                className="primary-button"
+                className="apply"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleApplyTask(task._id);
@@ -181,7 +230,7 @@ const TaskReceiverDashboard = () => {
                 Apply
               </button>
               <button
-                className="secondary-button"
+                className="save"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSaveTask(task._id);
@@ -193,7 +242,151 @@ const TaskReceiverDashboard = () => {
           </div>
         ))
       ) : (
-        <p>No available tasks found in your area. Try changing your location.</p>
+        <p className="no-tasks-message">No available tasks found in your area. Try changing your location.</p>
+      )}
+    </div>
+  );
+
+  const renderAppliedTasks = () => (
+    <div className="gigbud-task-list">
+      {filteredTasks.length > 0 ? (
+        filteredTasks.map(task => (
+          <div
+            key={task._id}
+            className="gigbud-task-card"
+            onClick={() => handleTaskClick(task)}
+          >
+            <div className="task-title-row">
+              <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
+              <span className="task-status-badge applied">Awaiting Approval</span>
+            </div>
+            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-meta">
+              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
+              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
+              <span>Type: <b>{task.type || 'Regular'}</b></span>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="no-tasks-message">No applied tasks yet.</p>
+      )}
+    </div>
+  );
+
+  const renderSavedTasks = () => (
+    <div className="gigbud-task-list">
+      {filteredTasks.length > 0 ? (
+        filteredTasks.map(task => (
+          <div
+            key={task._id}
+            className="gigbud-task-card"
+            onClick={() => handleTaskClick(task)}
+          >
+            <div className="task-title-row">
+              <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
+              <span className="task-status-badge saved">Saved</span>
+            </div>
+            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-meta">
+              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
+              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
+              <span>Type: <b>{task.type || 'Regular'}</b></span>
+            </div>
+            <div className="task-actions" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="apply"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApplyTask(task._id);
+                }}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="no-tasks-message">No saved tasks yet.</p>
+      )}
+    </div>
+  );
+
+  const renderOngoingTasks = () => (
+    <div className="gigbud-task-list">
+      {filteredTasks.length > 0 ? (
+        filteredTasks.map(task => (
+          <div
+            key={task._id}
+            className="gigbud-task-card"
+            onClick={() => handleTaskClick(task)}
+          >
+            <div className="task-title-row">
+              <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
+              <span className="task-status-badge inprogress">In Progress</span>
+            </div>
+            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-meta">
+              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
+              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
+              <span>Type: <b>{task.type || 'Regular'}</b></span>
+            </div>
+            <div className="task-actions" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="mark-complete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMarkComplete(task._id);
+                }}
+              >
+                Mark as Complete
+              </button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="no-tasks-message">No ongoing tasks yet.</p>
+      )}
+    </div>
+  );
+
+  const renderCompletedTasks = () => (
+    <div className="gigbud-task-list">
+      {filteredTasks.length > 0 ? (
+        filteredTasks.map(task => (
+          <div
+            key={task._id}
+            className="gigbud-task-card"
+            onClick={() => handleTaskClick(task)}
+          >
+            <div className="task-title-row">
+              <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
+              <span className="task-status-badge completed">Completed</span>
+            </div>
+            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-meta">
+              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
+              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
+              <span>Type: <b>{task.type || 'Regular'}</b></span>
+            </div>
+            <div className="gigbud-rating">
+              <span>Your Rating:</span>
+              {[1,2,3,4,5].map(star => (
+                <span
+                  key={star}
+                  className={`star${ratings[task._id] >= star ? '' : ' inactive'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRate(task._id, star);
+                  }}
+                >★</span>
+              ))}
+              {ratings[task._id] && <span style={{ marginLeft: 8 }}>{ratings[task._id]}/5</span>}
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="no-tasks-message">No completed tasks yet.</p>
       )}
     </div>
   );
@@ -202,6 +395,14 @@ const TaskReceiverDashboard = () => {
     switch (activeTab) {
       case 'available':
         return renderAvailableTasks();
+      case 'applied':
+        return renderAppliedTasks();
+      case 'saved':
+        return renderSavedTasks();
+      case 'ongoing':
+        return renderOngoingTasks();
+      case 'completed':
+        return renderCompletedTasks();
       default:
         return renderAvailableTasks();
     }
@@ -212,36 +413,92 @@ const TaskReceiverDashboard = () => {
       {loading && <div className="loading-overlay">Loading...</div>}
       {error && <div className="error-message">{error}</div>}
 
-      <div className="sidebar">
+      {/* Sidebar */}
+      <div className="gigbud-sidebar">
         <div className="sidebar-header">
           <h1>Task Receiver</h1>
           <p>Welcome, {user?.name || 'User'}!</p>
         </div>
-        <nav className="sidebar-nav">
-          <button className={`nav-item ${activeTab === 'available' ? 'active' : ''}`} onClick={() => setActiveTab('available')}>🧭 Available Tasks</button>
-          {/* More tabs like applied, saved, ongoing can go here */}
-          <button className="nav-item location-item" onClick={() => setShowLocationModal(true)}>
-            📍 {location || 'Set Location'}
+        <div className="gigbud-sidebar-tabs">
+          {/* Location button */}
+          <button
+            className="gigbud-tab-btn"
+            onClick={() => setShowLocationModal(true)}
+          >
+            <span style={{ fontSize: 22, marginRight: 12 }}>📍</span>
+            Add Location
+            {location && (
+              <span className="location-badge">({location})</span>
+            )}
           </button>
-        </nav>
+          
+          {/* Tab buttons */}
+          {TAB_LIST.map(tab => (
+            <button
+              key={tab.key}
+              className={`gigbud-tab-btn${activeTab === tab.key ? " active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <span style={{ fontSize: 22, marginRight: 12 }}>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+
+          {/* Sort and Filter UI */}
+          <div className="gigbud-sidebar-filters">
+            <label>Sort by:</label>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="deadline">Deadline</option>
+              <option value="budgetHigh">Budget High to Low</option>
+              <option value="budgetLow">Budget Low to High</option>
+            </select>
+
+            <label>Filter by Type:</label>
+            <select 
+              value={filterType} 
+              onChange={(e) => setFilterType(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Types</option>
+              <option value="time">Time-Based</option>
+              <option value="regular">Regular Tasks</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <main className="main-content">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Main content */}
+      <main className="gigbud-main">
+        <div className="gigbud-panel">
+          {/* Panel Title */}
+          <h2 className="gigbud-panel-title">
+            {TAB_LIST.find(t => t.key === activeTab)?.icon || "📍"} {TAB_LIST.find(t => t.key === activeTab)?.label || "Available Tasks"}
+          </h2>
+          
+          {/* Search bar */}
+          <div className="gigbud-searchbar-row">
+            <input
+              className="gigbud-searchbar"
+              type="text"
+              placeholder="🔍 Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          {/* Task Lists */}
+          {renderMainContent()}
         </div>
-        {renderMainContent()}
       </main>
 
+      {/* Location Modal */}
       {showLocationModal && (
-        <div className="modal-overlay" onClick={() => setShowLocationModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowLocationModal(false)}>×</button>
+        <div className="gigbud-modal-bg" onClick={() => setShowLocationModal(false)}>
+          <div className="gigbud-modal" onClick={e => e.stopPropagation()}>
             <h2>Set Your Location</h2>
             <div className="modal-body">
               <input
@@ -250,11 +507,106 @@ const TaskReceiverDashboard = () => {
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
               />
-              <button className="secondary-button" onClick={handleUseMyLocation}>Use My Current Location</button>
-              <div className="modal-actions">
-                <button className="primary-button" onClick={handleSaveLocation} disabled={!locationInput}>Save Location</button>
-                <button className="secondary-button" onClick={() => setShowLocationModal(false)}>Cancel</button>
+              <button className="use-location" onClick={handleUseMyLocation}>Use My Current Location</button>
+              <div className="map-placeholder">
+                <span>🗺️ [Map Here]</span>
               </div>
+              <div className="modal-actions">
+                <button className="cancel" onClick={() => setShowLocationModal(false)}>Cancel</button>
+                <button className="save" onClick={handleSaveLocation} disabled={!locationInput}>Save Location</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Details Modal */}
+      {isModalOpen && selectedTask && (
+        <div className="gigbud-modal-bg" onClick={handleCloseModal}>
+          <div className="gigbud-modal task-details-modal" onClick={e => e.stopPropagation()}>
+            <h2>{selectedTask.title || selectedTask.jobType || "Untitled Task"}</h2>
+            <div className="task-details-content">
+              <div className="task-details-section">
+                <h3>Description</h3>
+                <p>{selectedTask.description || "No description available"}</p>
+              </div>
+              
+              <div className="task-details-section">
+                <h3>Details</h3>
+                <div className="task-details-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Budget:</span>
+                    <span className="detail-value">₹{selectedTask.budget || selectedTask.budgetPerHour || 'Negotiable'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Deadline:</span>
+                    <span className="detail-value">
+                      {selectedTask.deadline ? new Date(selectedTask.deadline).toLocaleString() : 'Flexible'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Location:</span>
+                    <span className="detail-value">
+                      {selectedTask.location?.coordinates
+                        ? `Lat: ${selectedTask.location.coordinates[1]}, Lng: ${selectedTask.location.coordinates[0]}`
+                        : selectedTask.workLocation || 'Remote'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Status:</span>
+                    <span className="detail-value">{selectedTask.status || 'Open'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Type:</span>
+                    <span className="detail-value">{selectedTask.type || 'Regular'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="task-details-section">
+                <h3>Requirements</h3>
+                <ul className="requirements-list">
+                  {selectedTask.requirements?.map((req, index) => (
+                    <li key={index}>{req}</li>
+                  )) || <li>No specific requirements listed</li>}
+                </ul>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="cancel" onClick={handleCloseModal}>Close</button>
+              {activeTab === 'available' && (
+                <>
+                  <button
+                    className="apply"
+                    onClick={() => handleApplyTask(selectedTask._id)}
+                  >
+                    Apply
+                  </button>
+                  <button
+                    className="save"
+                    onClick={() => handleSaveTask(selectedTask._id)}
+                  >
+                    Save
+                  </button>
+                </>
+              )}
+              {activeTab === 'saved' && (
+                <button
+                  className="apply"
+                  onClick={() => handleApplyTask(selectedTask._id)}
+                >
+                  Apply
+                </button>
+              )}
+              {activeTab === 'ongoing' && (
+                <button
+                  className="mark-complete"
+                  onClick={() => handleMarkComplete(selectedTask._id)}
+                >
+                  Mark as Complete
+                </button>
+              )}
             </div>
           </div>
         </div>
