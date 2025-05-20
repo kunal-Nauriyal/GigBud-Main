@@ -90,9 +90,7 @@ const TaskReceiverDashboard = () => {
     }
   };
 
-  // Helper function to get the location display value from task
   const getLocationDisplay = (task) => {
-    // Check for object-based location (In-Person)
     if (task.location && typeof task.location === 'object') {
       if (task.location.address) {
         return task.location.address;
@@ -101,15 +99,12 @@ const TaskReceiverDashboard = () => {
         return task.location.name;
       }
     }
-    // Check for simple workLocation property
     if (task.workLocation && task.workLocation !== 'Online') {
       return task.workLocation;
     }
-    // Default to location string if present and not 'Online'
     if (typeof task.location === 'string' && task.location !== 'Online') {
       return task.location;
     }
-    // Return 'Remote' as the fallback for tasks with online/remote location
     return 'Remote';
   };
 
@@ -154,8 +149,6 @@ const TaskReceiverDashboard = () => {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        // Instead of using lat/lng directly, we'll use reverse geocoding
-        // For now, we'll just set a placeholder
         setLocationInput("Current Location");
         toast.info("Using your current location");
       },
@@ -166,7 +159,7 @@ const TaskReceiverDashboard = () => {
   const handleSaveLocation = () => {
     const normalized = locationInput.toLowerCase().trim();
     setLocation(normalized);
-    setLocationSearchQuery(''); // Reset location search when setting new base location
+    setLocationSearchQuery('');
     setShowLocationModal(false);
     toast.success(`Location set to: ${normalized}`);
     fetchTasks();
@@ -209,12 +202,10 @@ const TaskReceiverDashboard = () => {
 
   const filteredTasks = tasks
     .filter(task => {
-      // First filter by title/description search query
       const matchesSearch = !searchQuery || 
         task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Then filter by location search
       const taskLocation = getLocationDisplay(task).toLowerCase();
       const matchesLocation = !locationSearchQuery ||
         taskLocation.includes(locationSearchQuery.toLowerCase());
@@ -223,16 +214,37 @@ const TaskReceiverDashboard = () => {
     })
     .filter(task => {
       if (filterType === 'all') return true;
-      return task.type === filterType;
+      return task.taskType === filterType;
     })
     .sort((a, b) => {
       if (sortBy === 'deadline') return new Date(a.deadline) - new Date(b.deadline);
-      if (sortBy === 'budgetHigh') return (b.budget || b.budgetPerHour || 0) - (a.budget || a.budgetPerHour || 0);
-      if (sortBy === 'budgetLow') return (a.budget || a.budgetPerHour || 0) - (b.budget || b.budgetPerHour || 0);
+      if (sortBy === 'budgetHigh') {
+        const aBudget = a.taskType === 'timebuyer' ? a.budgetPerHour : a.budget;
+        const bBudget = b.taskType === 'timebuyer' ? b.budgetPerHour : b.budget;
+        return (bBudget || 0) - (aBudget || 0);
+      }
+      if (sortBy === 'budgetLow') {
+        const aBudget = a.taskType === 'timebuyer' ? a.budgetPerHour : a.budget;
+        const bBudget = b.taskType === 'timebuyer' ? b.budgetPerHour : b.budget;
+        return (aBudget || 0) - (bBudget || 0);
+      }
       return 0;
     });
 
-  // Task List Panels
+  const renderTaskBudget = (task) => {
+    if (task.taskType === 'timebuyer') {
+      return `₹${task.budgetPerHour || 'Negotiable'}/hr`;
+    }
+    return `₹${task.budget || 'Negotiable'}`;
+  };
+
+  const renderTaskDeadline = (task) => {
+    if (task.taskType === 'timebuyer') {
+      return task.timeRequirement || 'Flexible';
+    }
+    return task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible';
+  };
+
   const renderAvailableTasks = () => (
     <div className="gigbud-task-list">
       {filteredTasks.length > 0 ? (
@@ -250,9 +262,9 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
-              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
-              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
-              <span>Type: <b>{task.type || 'Regular'}</b></span>
+              <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
+              <span>Budget: <b>{renderTaskBudget(task)}</b></span>
+              <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
               <button
@@ -301,9 +313,9 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
-              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
-              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
-              <span>Type: <b>{task.type || 'Regular'}</b></span>
+              <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
+              <span>Budget: <b>{renderTaskBudget(task)}</b></span>
+              <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
           </div>
         ))
@@ -328,9 +340,9 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
-              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
-              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
-              <span>Type: <b>{task.type || 'Regular'}</b></span>
+              <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
+              <span>Budget: <b>{renderTaskBudget(task)}</b></span>
+              <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
               <button
@@ -366,9 +378,9 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
-              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
-              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
-              <span>Type: <b>{task.type || 'Regular'}</b></span>
+              <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
+              <span>Budget: <b>{renderTaskBudget(task)}</b></span>
+              <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
               <button
@@ -404,9 +416,9 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
-              <span>Budget: <b>₹{task.budget || task.budgetPerHour || 'Negotiable'}</b></span>
-              <span>Deadline: <b>{task.deadline ? new Date(task.deadline).toLocaleString() : 'Flexible'}</b></span>
-              <span>Type: <b>{task.type || 'Regular'}</b></span>
+              <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
+              <span>Budget: <b>{renderTaskBudget(task)}</b></span>
+              <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="gigbud-rating">
               <span>Your Rating:</span>
@@ -503,8 +515,8 @@ const TaskReceiverDashboard = () => {
               className="filter-select"
             >
               <option value="all">All Types</option>
-              <option value="time">Time-Based</option>
-              <option value="regular">Regular Tasks</option>
+              <option value="timebuyer">Time-Based</option>
+              <option value="normal">Regular Tasks</option>
             </select>
           </div>
         </div>
@@ -528,7 +540,7 @@ const TaskReceiverDashboard = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             
-            {/* Location search input - NEW! */}
+            {/* Location search input */}
             <input
               className="gigbud-searchbar location-search"
               type="text"
@@ -593,14 +605,12 @@ const TaskReceiverDashboard = () => {
                 <h3>Details</h3>
                 <div className="task-details-grid">
                   <div className="detail-item">
-                    <span className="detail-label">Budget:</span>
-                    <span className="detail-value">₹{selectedTask.budget || selectedTask.budgetPerHour || 'Negotiable'}</span>
+                    <span className="detail-label">Type:</span>
+                    <span className="detail-value">{selectedTask.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Deadline:</span>
-                    <span className="detail-value">
-                      {selectedTask.deadline ? new Date(selectedTask.deadline).toLocaleString() : 'Flexible'}
-                    </span>
+                    <span className="detail-label">Status:</span>
+                    <span className="detail-value">{selectedTask.status || 'Open'}</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Location:</span>
@@ -608,14 +618,42 @@ const TaskReceiverDashboard = () => {
                       {getLocationDisplay(selectedTask)}
                     </span>
                   </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Status:</span>
-                    <span className="detail-value">{selectedTask.status || 'Open'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Type:</span>
-                    <span className="detail-value">{selectedTask.type || 'Regular'}</span>
-                  </div>
+                  
+                  {selectedTask.taskType === 'timebuyer' ? (
+                    <>
+                      <div className="detail-item">
+                        <span className="detail-label">Time Requirement:</span>
+                        <span className="detail-value">{selectedTask.timeRequirement || 'Not specified'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Job Type:</span>
+                        <span className="detail-value">{selectedTask.jobType || 'Not specified'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Skills:</span>
+                        <span className="detail-value">
+                          {selectedTask.skills?.join(', ') || 'No specific skills listed'}
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Budget/Hour:</span>
+                        <span className="detail-value">₹{selectedTask.budgetPerHour || 'Negotiable'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="detail-item">
+                        <span className="detail-label">Budget:</span>
+                        <span className="detail-value">₹{selectedTask.budget || 'Negotiable'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Deadline:</span>
+                        <span className="detail-value">
+                          {selectedTask.deadline ? new Date(selectedTask.deadline).toLocaleString() : 'Flexible'}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

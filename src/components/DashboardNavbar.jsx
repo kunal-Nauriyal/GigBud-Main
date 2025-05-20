@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './DashboardNavbar.css';
 
 const DashboardNavbar = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // This is a critical check - if not logged in, don't render anything
   if (!isLoggedIn) {
     return null;
   }
@@ -17,19 +17,22 @@ const DashboardNavbar = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <div className="dashboard-navbar">
-      {/* Desktop view tabs */}
       <ul className="dashboard-nav-links">
         <li>
           <Link
             to="/task-provider-dashboard"
             className={`dashboard-link ${location.pathname === "/task-provider-dashboard" ? "active" : ""}`}
           >
-           Task Provider Dashboard
+            Task Provider Dashboard
           </Link>
         </li>
-        
         <li>
           <Link
             to="/task-receiver-dashboard"
@@ -39,11 +42,12 @@ const DashboardNavbar = () => {
           </Link>
         </li>
         <li>
-          
+          <button onClick={handleLogout} className="logout-button">
+            Logout
+          </button>
         </li>
       </ul>
 
-      {/* Mobile dropdown */}
       <div className="dashboard-mobile-menu">
         <button className="dashboard-dropdown-toggle" onClick={toggleDropdown}>
           {getActiveDashboardName(location.pathname)} <span className="dropdown-arrow">▼</span>
@@ -58,7 +62,6 @@ const DashboardNavbar = () => {
             >
               Provider Dashboard
             </Link>
-            
             <Link
               to="/task-receiver-dashboard"
               className={`dashboard-dropdown-item ${location.pathname === "/task-receiver-dashboard" ? "active" : ""}`}
@@ -66,6 +69,15 @@ const DashboardNavbar = () => {
             >
               Task Receiver Dashboard
             </Link>
+            <button 
+              onClick={() => {
+                handleLogout();
+                toggleDropdown();
+              }} 
+              className="logout-dropdown-item"
+            >
+              Logout
+            </button>
           </div>
         )}
       </div>
@@ -75,7 +87,6 @@ const DashboardNavbar = () => {
 
 function getActiveDashboardName(pathname) {
   if (pathname === "/task-provider-dashboard") return "Provider Dashboard";
-  //if (pathname === "/time-buyer-dashboard") return "Time Buyer Dashboard";
   if (pathname === "/task-receiver-dashboard") return "Task Receiver Dashboard";
   return "Select Dashboard";
 }

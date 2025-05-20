@@ -12,7 +12,6 @@ import TaskReceiverDashboard from "./pages/TaskReceiverDashboard";
 import TaskForm from "./pages/Taskform";
 import BuyingTimeForm from "./pages/BuyingTimeForm";
 import LoginModal from "./pages/Login";
-
 import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
@@ -23,10 +22,8 @@ function App() {
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
-  // This is a very minimal loading indicator - it ensures nothing renders
-  // until we've checked if the user is logged in or not
   if (!initialCheckDone) {
-    return null; // Or return a loading spinner if you prefer
+    return <div className="loading-screen">Loading...</div>;
   }
 
   return (
@@ -38,7 +35,6 @@ function App() {
           handleLogout={logout}
         />
 
-        {/* Only render DashboardNavbar if user is logged in */}
         {isLoggedIn && <DashboardNavbar />}
 
         <main className="content">

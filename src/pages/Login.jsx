@@ -15,26 +15,26 @@ function LoginModal({ isOpen, onClose }) {
     } else {
       document.body.classList.remove('modal-open');
     }
-
-    return () => {
-      document.body.classList.remove('modal-open');
-    };
+    return () => document.body.classList.remove('modal-open');
   }, [isOpen]);
 
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    loginEmail: '',
+    loginPassword: '',
+    signupName: '',
+    signupEmail: '',
+    signupPassword: '',
+    signupConfirmPassword: ''
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const toggleForm = (e) => {
     e.preventDefault();
     setIsLoginForm(!isLoginForm);
-  };
-
-  const toggleRememberMe = () => {
-    setRememberMe(!rememberMe);
   };
 
   const handleSubmit = async (e) => {
@@ -44,12 +44,10 @@ function LoginModal({ isOpen, onClose }) {
       try {
         const res = await fetch("http://localhost:3000/api/auth/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: loginEmail,
-            password: loginPassword,
+            email: formData.loginEmail,
+            password: formData.loginPassword,
           }),
         });
 
@@ -61,48 +59,34 @@ function LoginModal({ isOpen, onClose }) {
         }
 
         const accessToken = data?.data?.accessToken;
-        const refreshToken = data?.data?.refreshToken;
-
-        if (!accessToken || !refreshToken) {
-          alert("Missing tokens in response");
-          console.error("Login response missing tokens:", data);
+        if (!accessToken) {
+          alert("Missing access token in response");
           return;
         }
 
-        if (rememberMe) {
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("refreshToken", refreshToken);
-        } else {
-          sessionStorage.setItem("accessToken", accessToken);
-          sessionStorage.setItem("refreshToken", refreshToken);
-        }
-
-        login(accessToken);
-
+        login(accessToken, rememberMe);
         alert("Login successful!");
-        onClose(); // Close the modal
-        navigate("/task-receiver-dashboard"); // Navigate to dashboard
-
+        onClose();
+        navigate("/task-receiver-dashboard");
       } catch (err) {
         console.error("Login error:", err);
         alert("Login error");
       }
     } else {
-      if (signupPassword !== signupConfirmPassword) {
-        alert("Passwords do not match!");
+      // Signup logic remains the same
+      if (formData.signupPassword !== formData.signupConfirmPassword) {
+        alert("Passwords don't match!");
         return;
       }
 
       try {
         const res = await fetch("http://localhost:3000/api/auth/register", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: signupName,
-            email: signupEmail,
-            password: signupPassword,
+            name: formData.signupName,
+            email: formData.signupEmail,
+            password: formData.signupPassword,
           }),
         });
 
@@ -111,10 +95,14 @@ function LoginModal({ isOpen, onClose }) {
         if (res.ok) {
           alert("Signup successful! Please log in.");
           setIsLoginForm(true);
-          setSignupName('');
-          setSignupEmail('');
-          setSignupPassword('');
-          setSignupConfirmPassword('');
+          setFormData({
+            loginEmail: formData.signupEmail,
+            loginPassword: '',
+            signupName: '',
+            signupEmail: '',
+            signupPassword: '',
+            signupConfirmPassword: ''
+          });
         } else {
           alert(data.message || "Signup failed.");
         }
@@ -131,7 +119,6 @@ function LoginModal({ isOpen, onClose }) {
     <div className="login-container">
       <div className="login-box">
         <div className="close-button" onClick={onClose}>×</div>
-
         <div className="logo-container">
           <div className="logo">GigBud</div>
           <div className="tagline">A Place Where Buying Time is Easy</div>
@@ -146,10 +133,11 @@ function LoginModal({ isOpen, onClose }) {
                   <input
                     type="email"
                     id="login-email"
+                    name="loginEmail"
                     className="input-field"
                     placeholder="Enter your email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    value={formData.loginEmail}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -158,22 +146,29 @@ function LoginModal({ isOpen, onClose }) {
                   <input
                     type="password"
                     id="login-password"
+                    name="loginPassword"
                     className="input-field"
                     placeholder="Enter your password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
+                    value={formData.loginPassword}
+                    onChange={handleChange}
                     required
                   />
                 </div>
                 <div className="checkbox-container">
-                  <div
+                  <input
+                    type="checkbox"
+                    id="remember-me"
+                    checked={rememberMe}
+                    onChange={() => setRememberMe(!rememberMe)}
+                    className="hidden-checkbox"
+                  />
+                  <label 
+                    htmlFor="remember-me" 
                     className={`custom-checkbox ${rememberMe ? 'checked' : ''}`}
-                    onClick={toggleRememberMe}
-                  ></div>
-                  <label onClick={toggleRememberMe} className="checkbox-label">Remember me</label>
-                </div>
-                <div className="forgot-password">
-                  <a href="#" onClick={(e) => e.preventDefault()}>Forgot Password?</a>
+                  >
+                    {rememberMe && '✓'}
+                  </label>
+                  <span className="checkbox-label">Remember me</span>
                 </div>
                 <button type="submit" className="btn">Login</button>
                 <div className="switch-form">
@@ -188,10 +183,11 @@ function LoginModal({ isOpen, onClose }) {
                   <input
                     type="text"
                     id="signup-name"
+                    name="signupName"
                     className="input-field"
                     placeholder="Enter your full name"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
+                    value={formData.signupName}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -200,10 +196,11 @@ function LoginModal({ isOpen, onClose }) {
                   <input
                     type="email"
                     id="signup-email"
+                    name="signupEmail"
                     className="input-field"
                     placeholder="Enter your email"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
+                    value={formData.signupEmail}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -212,10 +209,11 @@ function LoginModal({ isOpen, onClose }) {
                   <input
                     type="password"
                     id="signup-password"
+                    name="signupPassword"
                     className="input-field"
                     placeholder="Enter your password"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
+                    value={formData.signupPassword}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -224,10 +222,11 @@ function LoginModal({ isOpen, onClose }) {
                   <input
                     type="password"
                     id="signup-confirm-password"
+                    name="signupConfirmPassword"
                     className="input-field"
                     placeholder="Confirm your password"
-                    value={signupConfirmPassword}
-                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                    value={formData.signupConfirmPassword}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -239,15 +238,6 @@ function LoginModal({ isOpen, onClose }) {
               </>
             )}
           </form>
-        </div>
-
-        <div className="social-login">
-          <p>Or continue with</p>
-          <div className="social-icons">
-            <div className="social-icon"><img src="/api/placeholder/20/20" alt="Google" /></div>
-            <div className="social-icon"><img src="/api/placeholder/20/20" alt="LinkedIn" /></div>
-            <div className="social-icon"><img src="/api/placeholder/20/20" alt="GitHub" /></div>
-          </div>
         </div>
       </div>
     </div>
