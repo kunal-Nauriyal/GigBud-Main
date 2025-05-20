@@ -27,6 +27,7 @@ const TaskReceiverDashboard = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
   const [ratings, setRatings] = useState({});
   const [sortBy, setSortBy] = useState('deadline');
   const [filterType, setFilterType] = useState('all');
@@ -89,6 +90,29 @@ const TaskReceiverDashboard = () => {
     }
   };
 
+  // Helper function to get the location display value from task
+  const getLocationDisplay = (task) => {
+    // Check for object-based location (In-Person)
+    if (task.location && typeof task.location === 'object') {
+      if (task.location.address) {
+        return task.location.address;
+      }
+      if (task.location.name) {
+        return task.location.name;
+      }
+    }
+    // Check for simple workLocation property
+    if (task.workLocation && task.workLocation !== 'Online') {
+      return task.workLocation;
+    }
+    // Default to location string if present and not 'Online'
+    if (typeof task.location === 'string' && task.location !== 'Online') {
+      return task.location;
+    }
+    // Return 'Remote' as the fallback for tasks with online/remote location
+    return 'Remote';
+  };
+
   const handleApplyTask = async (taskId) => {
     try {
       setLoading(true);
@@ -130,7 +154,10 @@ const TaskReceiverDashboard = () => {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocationInput(`lat:${pos.coords.latitude.toFixed(3)} lng:${pos.coords.longitude.toFixed(3)}`);
+        // Instead of using lat/lng directly, we'll use reverse geocoding
+        // For now, we'll just set a placeholder
+        setLocationInput("Current Location");
+        toast.info("Using your current location");
       },
       () => alert("Unable to retrieve your location.")
     );
@@ -139,7 +166,9 @@ const TaskReceiverDashboard = () => {
   const handleSaveLocation = () => {
     const normalized = locationInput.toLowerCase().trim();
     setLocation(normalized);
+    setLocationSearchQuery(''); // Reset location search when setting new base location
     setShowLocationModal(false);
+    toast.success(`Location set to: ${normalized}`);
     fetchTasks();
   };
 
@@ -174,15 +203,23 @@ const TaskReceiverDashboard = () => {
     setRatings({ ...ratings, [taskId]: rating });
   };
 
+  const handleLocationSearch = (e) => {
+    setLocationSearchQuery(e.target.value);
+  };
+
   const filteredTasks = tasks
     .filter(task => {
-      const taskLocation = task.location?.coordinates?.join(',') || task.workLocation || '';
-      if (!searchQuery) return true;
-      return (
+      // First filter by title/description search query
+      const matchesSearch = !searchQuery || 
         task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        taskLocation.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Then filter by location search
+      const taskLocation = getLocationDisplay(task).toLowerCase();
+      const matchesLocation = !locationSearchQuery ||
+        taskLocation.includes(locationSearchQuery.toLowerCase());
+      
+      return matchesSearch && matchesLocation;
     })
     .filter(task => {
       if (filterType === 'all') return true;
@@ -208,9 +245,7 @@ const TaskReceiverDashboard = () => {
             <div className="task-title-row">
               <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
               <span className="task-location">
-                {task.location?.coordinates
-                  ? `Lat: ${task.location.coordinates[1]}, Lng: ${task.location.coordinates[0]}`
-                  : task.workLocation || 'Remote'}
+                {getLocationDisplay(task)}
               </span>
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
@@ -242,7 +277,11 @@ const TaskReceiverDashboard = () => {
           </div>
         ))
       ) : (
-        <p className="no-tasks-message">No available tasks found in your area. Try changing your location.</p>
+        <p className="no-tasks-message">
+          {locationSearchQuery 
+            ? `No tasks found matching location "${locationSearchQuery}". Try a different search term.` 
+            : 'No available tasks found in your area. Try changing your location.'}
+        </p>
       )}
     </div>
   );
@@ -479,7 +518,7 @@ const TaskReceiverDashboard = () => {
             {TAB_LIST.find(t => t.key === activeTab)?.icon || "📍"} {TAB_LIST.find(t => t.key === activeTab)?.label || "Available Tasks"}
           </h2>
           
-          {/* Search bar */}
+          {/* Search bar row with two search inputs */}
           <div className="gigbud-searchbar-row">
             <input
               className="gigbud-searchbar"
@@ -488,7 +527,29 @@ const TaskReceiverDashboard = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            
+            {/* Location search input - NEW! */}
+            <input
+              className="gigbud-searchbar location-search"
+              type="text"
+              placeholder="📍 Filter by location..."
+              value={locationSearchQuery}
+              onChange={handleLocationSearch}
+            />
           </div>
+          
+          {/* Display selected location filter if any */}
+          {locationSearchQuery && (
+            <div className="active-location-filter">
+              <span>Filtering by location: <strong>{locationSearchQuery}</strong></span>
+              <button 
+                className="clear-filter-btn"
+                onClick={() => setLocationSearchQuery('')}
+              >
+                ✕
+              </button>
+            </div>
+          )}
           
           {/* Task Lists */}
           {renderMainContent()}
@@ -503,14 +564,11 @@ const TaskReceiverDashboard = () => {
             <div className="modal-body">
               <input
                 type="text"
-                placeholder="Enter your location"
+                placeholder="Enter city name, area, or address"
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
               />
               <button className="use-location" onClick={handleUseMyLocation}>Use My Current Location</button>
-              <div className="map-placeholder">
-                <span>🗺️ [Map Here]</span>
-              </div>
               <div className="modal-actions">
                 <button className="cancel" onClick={() => setShowLocationModal(false)}>Cancel</button>
                 <button className="save" onClick={handleSaveLocation} disabled={!locationInput}>Save Location</button>
@@ -547,9 +605,7 @@ const TaskReceiverDashboard = () => {
                   <div className="detail-item">
                     <span className="detail-label">Location:</span>
                     <span className="detail-value">
-                      {selectedTask.location?.coordinates
-                        ? `Lat: ${selectedTask.location.coordinates[1]}, Lng: ${selectedTask.location.coordinates[0]}`
-                        : selectedTask.workLocation || 'Remote'}
+                      {getLocationDisplay(selectedTask)}
                     </span>
                   </div>
                   <div className="detail-item">

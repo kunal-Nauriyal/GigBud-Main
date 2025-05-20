@@ -39,7 +39,7 @@ function App() {
         />
 
         {/* Only render DashboardNavbar if user is logged in */}
-        {isLoggedIn === true && <DashboardNavbar />}
+        {isLoggedIn && <DashboardNavbar />}
 
         <main className="content">
           <Routes>

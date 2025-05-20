@@ -9,10 +9,7 @@ const initialNormalTask = {
   budget: "",
   location: "Online",
   contact: "Chat",
-  // New fields for location coordinates
-  locationType: "Point",
-  coordinates: [0, 0],
-  showMap: false
+  address: "", // Added address field instead of coordinates
 };
 
 const initialTimeBuyerTask = {
@@ -23,10 +20,7 @@ const initialTimeBuyerTask = {
   workLocation: "",
   budgetPerHour: "",
   additionalNotes: "",
-  // New fields for location coordinates
-  locationType: "Point",
-  coordinates: [0, 0],
-  showMap: false
+  address: "", // Added address field instead of coordinates
 };
 
 const skillOptions = [
@@ -60,19 +54,12 @@ const TaskForm = ({ onClose }) => {
       setFormData({ 
         ...formData, 
         [name]: value,
-        showMap: value === "In-Person"
       });
     } else {
       setFormData({ ...formData, [name]: value });
     }
     
     if (errors[name]) setErrors({ ...errors, [name]: "" });
-  };
-
-  const handleCoordinateChange = (index, value) => {
-    const newCoordinates = [...formData.coordinates];
-    newCoordinates[index] = parseFloat(value) || 0;
-    setFormData({ ...formData, coordinates: newCoordinates });
   };
 
   // --- Time Buyer Handlers ---
@@ -83,7 +70,6 @@ const TaskForm = ({ onClose }) => {
       setTimeBuyerData({ 
         ...timeBuyerData, 
         [name]: value,
-        showMap: value === "In-Person"
       });
     } else if (type === "checkbox") {
       setTimeBuyerData((prev) => ({
@@ -97,12 +83,6 @@ const TaskForm = ({ onClose }) => {
     }
     
     if (errors[name]) setErrors({ ...errors, [name]: "" });
-  };
-
-  const handleTimeBuyerCoordinateChange = (index, value) => {
-    const newCoordinates = [...timeBuyerData.coordinates];
-    newCoordinates[index] = parseFloat(value) || 0;
-    setTimeBuyerData({ ...timeBuyerData, coordinates: newCoordinates });
   };
 
   // --- File Handlers ---
@@ -132,8 +112,8 @@ const TaskForm = ({ onClose }) => {
       newErrors.budget = "Valid budget amount is required.";
     }
     if (formData.location === "In-Person") {
-      if (!formData.coordinates || formData.coordinates.length !== 2) {
-        newErrors.coordinates = "Valid coordinates are required.";
+      if (!formData.address?.trim()) {
+        newErrors.address = "Location address is required for in-person tasks.";
       }
     }
 
@@ -147,10 +127,7 @@ const TaskForm = ({ onClose }) => {
     if (!timeBuyerData.jobType?.trim()) newErrors.jobType = "Job Type is required.";
     if (timeBuyerData.workMode === "In-Person") {
       if (!timeBuyerData.workLocation?.trim()) {
-        newErrors.workLocation = "Location is required.";
-      }
-      if (!timeBuyerData.coordinates || timeBuyerData.coordinates.length !== 2) {
-        newErrors.coordinates = "Valid coordinates are required.";
+        newErrors.workLocation = "Location is required for in-person work.";
       }
     }
     if (!timeBuyerData.budgetPerHour?.trim() || timeBuyerData.budgetPerHour <= 0)
@@ -186,10 +163,10 @@ const TaskForm = ({ onClose }) => {
           createdAt: new Date().toISOString(),
           displayName: formData.title,
           displayDate: formattedCurrentDate,
-          // Updated location handling
+          // Updated location handling - using address instead of coordinates
           location: formData.location === "In-Person" ? {
-            type: "Point",
-            coordinates: formData.coordinates
+            mode: "In-Person",
+            address: formData.address
           } : "Online"
         };
       } else {
@@ -213,10 +190,10 @@ const TaskForm = ({ onClose }) => {
           workLocation: timeBuyerData.workMode === "In-Person" ? timeBuyerData.workLocation : "Online",
           budgetPerHour: timeBuyerData.budgetPerHour,
           additionalNotes: timeBuyerData.additionalNotes,
-          // Updated location handling
+          // Updated location handling - using address instead of coordinates
           location: timeBuyerData.workMode === "In-Person" ? {
-            type: "Point",
-            coordinates: timeBuyerData.coordinates
+            mode: "In-Person",
+            address: timeBuyerData.workLocation
           } : "Online"
         };
       }
@@ -238,8 +215,8 @@ const TaskForm = ({ onClose }) => {
         } else if (taskData[key] != null) {
           // Handle nested location object
           if (key === 'location' && typeof taskData[key] === 'object') {
-            formDataToSend.append('location[type]', taskData[key].type);
-            formDataToSend.append('location[coordinates]', JSON.stringify(taskData[key].coordinates));
+            formDataToSend.append('location[mode]', taskData[key].mode);
+            formDataToSend.append('address', taskData[key].address);
           } else {
             formDataToSend.append(key, taskData[key]);
           }
@@ -380,32 +357,22 @@ const TaskForm = ({ onClose }) => {
                     </div>
                   </div>
 
-                  {/* Location Coordinates for In-Person tasks */}
-                  {formData.showMap && (
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Latitude <span className="required">*</span></label>
-                        <input
-                          type="number"
-                          value={formData.coordinates[1]}
-                          onChange={(e) => handleCoordinateChange(1, e.target.value)}
-                          className={errors.coordinates ? "input-error" : ""}
-                          step="any"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Longitude <span className="required">*</span></label>
-                        <input
-                          type="number"
-                          value={formData.coordinates[0]}
-                          onChange={(e) => handleCoordinateChange(0, e.target.value)}
-                          className={errors.coordinates ? "input-error" : ""}
-                          step="any"
-                        />
-                      </div>
+                  {/* Address field for In-Person tasks */}
+                  {formData.location === "In-Person" && (
+                    <div className="form-group">
+                      <label htmlFor="address">Location Address <span className="required">*</span></label>
+                      <input
+                        id="address"
+                        type="text"
+                        name="address"
+                        placeholder="Enter the task location"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className={errors.address ? "input-error" : ""}
+                      />
+                      {errors.address && <p className="error-text">{errors.address}</p>}
                     </div>
                   )}
-                  {errors.coordinates && <p className="error-text">{errors.coordinates}</p>}
                 </div>
 
                 {/* File Attachment Section - Only for Normal Task */}
@@ -486,43 +453,18 @@ const TaskForm = ({ onClose }) => {
                     </select>
                   </div>
                   {timeBuyerData.workMode === "In-Person" && (
-                    <>
-                      <div className="form-group">
-                        <label>Location Address <span className="required">*</span></label>
-                        <input
-                          type="text"
-                          name="workLocation"
-                          placeholder="Enter location address"
-                          value={timeBuyerData.workLocation}
-                          onChange={handleTimeBuyerChange}
-                          className={errors.workLocation ? "input-error" : ""}
-                        />
-                        {errors.workLocation && <p className="error-text">{errors.workLocation}</p>}
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Latitude <span className="required">*</span></label>
-                          <input
-                            type="number"
-                            value={timeBuyerData.coordinates[1]}
-                            onChange={(e) => handleTimeBuyerCoordinateChange(1, e.target.value)}
-                            className={errors.coordinates ? "input-error" : ""}
-                            step="any"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Longitude <span className="required">*</span></label>
-                          <input
-                            type="number"
-                            value={timeBuyerData.coordinates[0]}
-                            onChange={(e) => handleTimeBuyerCoordinateChange(0, e.target.value)}
-                            className={errors.coordinates ? "input-error" : ""}
-                            step="any"
-                          />
-                        </div>
-                      </div>
-                      {errors.coordinates && <p className="error-text">{errors.coordinates}</p>}
-                    </>
+                    <div className="form-group">
+                      <label>Location Address <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        name="workLocation"
+                        placeholder="Enter location address"
+                        value={timeBuyerData.workLocation}
+                        onChange={handleTimeBuyerChange}
+                        className={errors.workLocation ? "input-error" : ""}
+                      />
+                      {errors.workLocation && <p className="error-text">{errors.workLocation}</p>}
+                    </div>
                   )}
                   <div className="form-group">
                     <label>Budget per Hour <span className="required">*</span></label>
