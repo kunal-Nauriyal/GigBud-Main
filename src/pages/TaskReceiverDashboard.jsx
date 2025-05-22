@@ -27,7 +27,6 @@ const TaskReceiverDashboard = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationSearchQuery, setLocationSearchQuery] = useState('');
   const [ratings, setRatings] = useState({});
   const [sortBy, setSortBy] = useState('latest'); // Changed default to 'latest'
   const [filterType, setFilterType] = useState('all');
@@ -52,7 +51,14 @@ const TaskReceiverDashboard = () => {
 
       switch (activeTab) {
         case 'available':
-          response = await taskAPI.getAvailableTasks(normalizedLocation);
+          response = await taskAPI.getAvailableTasks();
+          // Filter tasks by location if location is set
+          if (normalizedLocation) {
+            response.data = response.data.filter(task => {
+              const taskLocation = getLocationDisplay(task).toLowerCase();
+              return taskLocation.includes(normalizedLocation);
+            });
+          }
           break;
         case 'applied':
           response = await taskAPI.getAppliedTasks();
@@ -67,7 +73,7 @@ const TaskReceiverDashboard = () => {
           response = await taskAPI.getCompletedTasks();
           break;
         default:
-          response = await taskAPI.getAvailableTasks(normalizedLocation);
+          response = await taskAPI.getAvailableTasks();
       }
 
       if (response.success) {
@@ -150,7 +156,10 @@ const TaskReceiverDashboard = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocationInput("Current Location");
+        setLocation("Current Location");
         toast.info("Using your current location");
+        setShowLocationModal(false);
+        fetchTasks();
       },
       () => alert("Unable to retrieve your location.")
     );
@@ -159,7 +168,6 @@ const TaskReceiverDashboard = () => {
   const handleSaveLocation = () => {
     const normalized = locationInput.toLowerCase().trim();
     setLocation(normalized);
-    setLocationSearchQuery('');
     setShowLocationModal(false);
     toast.success(`Location set to: ${normalized}`);
     fetchTasks();
@@ -196,21 +204,13 @@ const TaskReceiverDashboard = () => {
     setRatings({ ...ratings, [taskId]: rating });
   };
 
-  const handleLocationSearch = (e) => {
-    setLocationSearchQuery(e.target.value);
-  };
-
   const filteredTasks = tasks
     .filter(task => {
       const matchesSearch = !searchQuery || 
         task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const taskLocation = getLocationDisplay(task).toLowerCase();
-      const matchesLocation = !locationSearchQuery ||
-        taskLocation.includes(locationSearchQuery.toLowerCase());
-      
-      return matchesSearch && matchesLocation;
+      return matchesSearch;
     })
     .filter(task => {
       if (filterType === 'all') return true;
@@ -298,9 +298,9 @@ const TaskReceiverDashboard = () => {
         ))
       ) : (
         <p className="no-tasks-message">
-          {locationSearchQuery 
-            ? `No tasks found matching location "${locationSearchQuery}". Try a different search term.` 
-            : 'No available tasks found in your area. Try changing your location.'}
+          {location 
+            ? `No available tasks found in ${location}. Try changing your location.`
+            : 'No available tasks found. Try setting your location.'}
         </p>
       )}
     </div>
@@ -485,10 +485,7 @@ const TaskReceiverDashboard = () => {
             onClick={() => setShowLocationModal(true)}
           >
             <span style={{ fontSize: 22, marginRight: 12 }}>📍</span>
-            Add Location
-            {location && (
-              <span className="location-badge">({location})</span>
-            )}
+            {location ? `Location: ${location}` : 'Set Location'}
           </button>
           
           {/* Tab buttons */}
@@ -539,7 +536,7 @@ const TaskReceiverDashboard = () => {
             {TAB_LIST.find(t => t.key === activeTab)?.icon || "📍"} {TAB_LIST.find(t => t.key === activeTab)?.label || "Available Tasks"}
           </h2>
           
-          {/* Search bar row with two search inputs */}
+          {/* Search bar */}
           <div className="gigbud-searchbar-row">
             <input
               className="gigbud-searchbar"
@@ -548,29 +545,7 @@ const TaskReceiverDashboard = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            
-            {/* Location search input */}
-            <input
-              className="gigbud-searchbar location-search"
-              type="text"
-              placeholder="📍 Filter by location..."
-              value={locationSearchQuery}
-              onChange={handleLocationSearch}
-            />
           </div>
-          
-          {/* Display selected location filter if any */}
-          {locationSearchQuery && (
-            <div className="active-location-filter">
-              <span>Filtering by location: <strong>{locationSearchQuery}</strong></span>
-              <button 
-                className="clear-filter-btn"
-                onClick={() => setLocationSearchQuery('')}
-              >
-                ✕
-              </button>
-            </div>
-          )}
           
           {/* Task Lists */}
           {renderMainContent()}
