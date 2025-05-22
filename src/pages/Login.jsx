@@ -73,7 +73,7 @@ function LoginModal({ isOpen, onClose }) {
         alert("Login error");
       }
     } else {
-      // Signup logic remains the same
+      // Signup logic
       if (formData.signupPassword !== formData.signupConfirmPassword) {
         alert("Passwords don't match!");
         return;
@@ -160,15 +160,8 @@ function LoginModal({ isOpen, onClose }) {
                     id="remember-me"
                     checked={rememberMe}
                     onChange={() => setRememberMe(!rememberMe)}
-                    className="hidden-checkbox"
                   />
-                  <label 
-                    htmlFor="remember-me" 
-                    className={`custom-checkbox ${rememberMe ? 'checked' : ''}`}
-                  >
-                    {rememberMe && '✓'}
-                  </label>
-                  <span className="checkbox-label">Remember me</span>
+                  <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
                 </div>
                 <button type="submit" className="btn">Login</button>
                 <div className="switch-form">

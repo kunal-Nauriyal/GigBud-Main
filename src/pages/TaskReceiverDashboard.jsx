@@ -29,7 +29,7 @@ const TaskReceiverDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
   const [ratings, setRatings] = useState({});
-  const [sortBy, setSortBy] = useState('deadline');
+  const [sortBy, setSortBy] = useState('latest'); // Changed default to 'latest'
   const [filterType, setFilterType] = useState('all');
 
   useEffect(() => {
@@ -217,7 +217,15 @@ const TaskReceiverDashboard = () => {
       return task.taskType === filterType;
     })
     .sort((a, b) => {
-      if (sortBy === 'deadline') return new Date(a.deadline) - new Date(b.deadline);
+      if (sortBy === 'latest') {
+        // Sort by creation date (latest first)
+        const aDate = new Date(a.createdAt || a._id);
+        const bDate = new Date(b.createdAt || b._id);
+        return bDate - aDate;
+      }
+      if (sortBy === 'deadline') {
+        return new Date(a.deadline) - new Date(b.deadline);
+      }
       if (sortBy === 'budgetHigh') {
         const aBudget = a.taskType === 'timebuyer' ? a.budgetPerHour : a.budget;
         const bBudget = b.taskType === 'timebuyer' ? b.budgetPerHour : b.budget;
@@ -503,6 +511,7 @@ const TaskReceiverDashboard = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="filter-select"
             >
+              <option value="latest">Latest Added</option>
               <option value="deadline">Deadline</option>
               <option value="budgetHigh">Budget High to Low</option>
               <option value="budgetLow">Budget Low to High</option>

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './DashboardNavbar.css';
 
 const DashboardNavbar = () => {
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   if (!isLoggedIn) {
@@ -15,11 +14,6 @@ const DashboardNavbar = () => {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
   };
 
   return (
@@ -40,11 +34,6 @@ const DashboardNavbar = () => {
           >
             Task Receiver Dashboard
           </Link>
-        </li>
-        <li>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
         </li>
       </ul>
 
@@ -69,15 +58,6 @@ const DashboardNavbar = () => {
             >
               Task Receiver Dashboard
             </Link>
-            <button 
-              onClick={() => {
-                handleLogout();
-                toggleDropdown();
-              }} 
-              className="logout-dropdown-item"
-            >
-              Logout
-            </button>
           </div>
         )}
       </div>
