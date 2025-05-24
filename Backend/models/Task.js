@@ -18,7 +18,7 @@ const TaskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'completed'],
+      enum: ['pending', 'applied', 'ongoing', 'completed'],
       default: 'pending',
     },
 
@@ -128,6 +128,14 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+
+    // SavedBy array to track users who saved the task
+    savedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   { timestamps: true }
 );
