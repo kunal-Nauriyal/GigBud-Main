@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { taskAPI } from '../services/api';
 import { toast } from 'react-toastify';
+import LocationDropdown from './LocationDropdown';
 import './TaskReceiverDashboard.css';
 
 // Tab list with icons for sidebar
@@ -33,6 +34,7 @@ const TaskReceiverDashboard = () => {
   const [appliedTasks, setAppliedTasks] = useState(new Set());
   const [savedTasks, setSavedTasks] = useState(new Set());
   const [ongoingTasks, setOngoingTasks] = useState(new Set());
+  const [completedTasks, setCompletedTasks] = useState(new Set());
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -76,6 +78,7 @@ const TaskReceiverDashboard = () => {
           break;
         case 'completed':
           response = await taskAPI.getCompletedTasks();
+          setCompletedTasks(new Set(response.data.map(task => task._id)));
           break;
         default:
           response = await taskAPI.getAvailableTasks();
@@ -122,21 +125,22 @@ const TaskReceiverDashboard = () => {
     try {
       setLoading(true);
       setAppliedTasks(prev => new Set(prev).add(taskId));
-      
-      const response = await taskAPI.applyForTask(taskId);
-      if (response.success) {
-        toast.success('Application submitted successfully');
+
+      const applyResponse = await taskAPI.applyForTask(taskId);
+      if (applyResponse.success) {
+        toast.success('Application submitted');
+        setActiveTab('applied');
         fetchTasks();
       } else {
-        setAppliedTasks(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(taskId);
-          return newSet;
-        });
-        throw new Error(response.message || 'Failed to apply for task');
+        throw new Error(applyResponse.message || 'Failed to apply for task');
       }
     } catch (err) {
       toast.error(err.message || 'Failed to apply for task');
+      setAppliedTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
     } finally {
       setLoading(false);
     }
@@ -161,6 +165,11 @@ const TaskReceiverDashboard = () => {
       }
     } catch (err) {
       toast.error(err.message || 'Failed to save task');
+      setSavedTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
     } finally {
       setLoading(false);
     }
@@ -169,25 +178,33 @@ const TaskReceiverDashboard = () => {
   const handleMarkOngoing = async (taskId) => {
     try {
       setLoading(true);
-      const response = await taskAPI.markTaskAsOngoing(taskId);
-      
-      if (response.success) {
-        // Update both ongoing and applied tasks sets
+
+      // First ensure the task is applied
+      if (!appliedTasks.has(taskId)) {
+        const applyResponse = await taskAPI.applyForTask(taskId);
+        if (!applyResponse.success && applyResponse.message !== 'You have already applied for this task') {
+          throw new Error(applyResponse.message || 'You must apply before starting the task.');
+        }
+        setAppliedTasks(prev => new Set(prev).add(taskId));
+      }
+
+      // Then mark as ongoing
+      const ongoingResponse = await taskAPI.markTaskAsOngoing(taskId);
+      if (ongoingResponse.success) {
         setOngoingTasks(prev => new Set(prev).add(taskId));
         setAppliedTasks(prev => {
           const newSet = new Set(prev);
           newSet.delete(taskId);
           return newSet;
         });
-        
-        toast.success('Task marked as ongoing');
-        fetchTasks();
+        toast.success('Task marked as in progress');
         setActiveTab('ongoing');
+        fetchTasks();
       } else {
-        throw new Error(response.message || 'Failed to mark task as ongoing');
+        throw new Error(ongoingResponse.message || 'Failed to mark task as in progress');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to mark task as ongoing');
+      toast.error(err.message || 'Failed to mark task as in progress');
     } finally {
       setLoading(false);
     }
@@ -238,8 +255,10 @@ const TaskReceiverDashboard = () => {
           newSet.delete(taskId);
           return newSet;
         });
+        setCompletedTasks(prev => new Set(prev).add(taskId));
         toast.success('Task marked as complete');
         fetchTasks();
+        setActiveTab('completed');
       } else {
         throw new Error(response.message || 'Failed to mark task as complete');
       }
@@ -325,16 +344,16 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
               <button
-                className={`apply ${appliedTasks.has(task._id) ? 'applied' : ''}`}
+                className={`apply ${appliedTasks.has(task._id) || ongoingTasks.has(task._id) ? 'applied' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!appliedTasks.has(task._id)) {
+                  if (!appliedTasks.has(task._id) && !ongoingTasks.has(task._id)) {
                     handleApplyTask(task._id);
                   }
                 }}
-                disabled={appliedTasks.has(task._id)}
+                disabled={appliedTasks.has(task._id) || ongoingTasks.has(task._id)}
               >
-                {appliedTasks.has(task._id) ? 'Applied ✓' : 'Apply'}
+                {(appliedTasks.has(task._id) || ongoingTasks.has(task._id)) ? 'Applied ✓' : 'Apply'}
               </button>
               <button
                 className={`save ${savedTasks.has(task._id) ? 'saved' : ''}`}
@@ -372,11 +391,9 @@ const TaskReceiverDashboard = () => {
           >
             <div className="task-title-row">
               <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
-              {ongoingTasks.has(task._id) ? (
-                <span className="task-status-badge inprogress">In Progress</span>
-              ) : (
-                <span className="task-status-badge applied">Awaiting Approval</span>
-              )}
+              <span className={`task-status-badge ${task.status === 'in-progress' ? 'inprogress' : 'pending'}`}>
+                {task.status === 'in-progress' ? 'In Progress' : 'Awaiting Approval'}
+              </span>
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
@@ -385,7 +402,7 @@ const TaskReceiverDashboard = () => {
               <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
-              {!ongoingTasks.has(task._id) && (
+              {task.status !== 'in-progress' && (
                 <button
                   className="mark-ongoing"
                   onClick={(e) => {
@@ -394,6 +411,17 @@ const TaskReceiverDashboard = () => {
                   }}
                 >
                   Mark as Ongoing
+                </button>
+              )}
+              {task.status === 'in-progress' && (
+                <button
+                  className="mark-complete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMarkComplete(task._id);
+                  }}
+                >
+                  Mark as Complete
                 </button>
               )}
             </div>
@@ -426,16 +454,16 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
               <button
-                className={`apply ${appliedTasks.has(task._id) ? 'applied' : ''}`}
+                className={`apply ${appliedTasks.has(task._id) || ongoingTasks.has(task._id) ? 'applied' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!appliedTasks.has(task._id)) {
+                  if (!appliedTasks.has(task._id) && !ongoingTasks.has(task._id)) {
                     handleApplyTask(task._id);
                   }
                 }}
-                disabled={appliedTasks.has(task._id)}
+                disabled={appliedTasks.has(task._id) || ongoingTasks.has(task._id)}
               >
-                {appliedTasks.has(task._id) ? 'Applied ✓' : 'Apply'}
+                {(appliedTasks.has(task._id) || ongoingTasks.has(task._id)) ? 'Applied ✓' : 'Apply'}
               </button>
             </div>
           </div>
@@ -560,7 +588,7 @@ const TaskReceiverDashboard = () => {
             onClick={() => setShowLocationModal(true)}
           >
             <span style={{ fontSize: 22, marginRight: 12 }}>📍</span>
-            {location ? `Location: ${location}` : 'Set Location'}
+            {location ? `Location: ${location}` : 'Add Location'}
           </button>
           
           {/* Tab buttons */}
@@ -633,11 +661,12 @@ const TaskReceiverDashboard = () => {
           <div className="gigbud-modal" onClick={e => e.stopPropagation()}>
             <h2>Set Your Location</h2>
             <div className="modal-body">
-              <input
-                type="text"
-                placeholder="Enter city name, area, or address"
+              <LocationDropdown
                 value={locationInput}
-                onChange={(e) => setLocationInput(e.target.value)}
+                onChange={setLocationInput}
+                onSelect={(loc) => {
+                  setLocationInput(loc.name);
+                }}
               />
               <button className="use-location" onClick={handleUseMyLocation}>Use My Current Location</button>
               <div className="modal-actions">
@@ -731,15 +760,15 @@ const TaskReceiverDashboard = () => {
               {activeTab === 'available' && (
                 <>
                   <button
-                    className={`apply ${appliedTasks.has(selectedTask._id) ? 'applied' : ''}`}
+                    className={`apply ${appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id) ? 'applied' : ''}`}
                     onClick={() => {
-                      if (!appliedTasks.has(selectedTask._id)) {
+                      if (!appliedTasks.has(selectedTask._id) && !ongoingTasks.has(selectedTask._id)) {
                         handleApplyTask(selectedTask._id);
                       }
                     }}
-                    disabled={appliedTasks.has(selectedTask._id)}
+                    disabled={appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id)}
                   >
-                    {appliedTasks.has(selectedTask._id) ? 'Applied ✓' : 'Apply'}
+                    {(appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id)) ? 'Applied ✓' : 'Apply'}
                   </button>
                   <button
                     className={`save ${savedTasks.has(selectedTask._id) ? 'saved' : ''}`}
@@ -756,18 +785,18 @@ const TaskReceiverDashboard = () => {
               )}
               {activeTab === 'saved' && (
                 <button
-                  className={`apply ${appliedTasks.has(selectedTask._id) ? 'applied' : ''}`}
+                  className={`apply ${appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id) ? 'applied' : ''}`}
                   onClick={() => {
-                    if (!appliedTasks.has(selectedTask._id)) {
+                    if (!appliedTasks.has(selectedTask._id) && !ongoingTasks.has(selectedTask._id)) {
                       handleApplyTask(selectedTask._id);
                     }
                   }}
-                  disabled={appliedTasks.has(selectedTask._id)}
+                  disabled={appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id)}
                 >
-                  {appliedTasks.has(selectedTask._id) ? 'Applied ✓' : 'Apply'}
+                  {(appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id)) ? 'Applied ✓' : 'Apply'}
                 </button>
               )}
-              {activeTab === 'applied' && !ongoingTasks.has(selectedTask._id) && (
+              {activeTab === 'applied' && selectedTask.status !== 'in-progress' && (
                 <button
                   className="mark-ongoing"
                   onClick={() => handleMarkOngoing(selectedTask._id)}
@@ -775,7 +804,7 @@ const TaskReceiverDashboard = () => {
                   Mark as Ongoing
                 </button>
               )}
-              {activeTab === 'ongoing' && (
+              {(activeTab === 'applied' || activeTab === 'ongoing') && selectedTask.status === 'in-progress' && (
                 <button
                   className="mark-complete"
                   onClick={() => handleMarkComplete(selectedTask._id)}

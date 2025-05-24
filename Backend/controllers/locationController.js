@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import User from '../models/userModel.js';
+import Location from '../models/Location.js';
 import { successResponse, errorResponse } from '../views/responseTemplates.js';
 
 // 📌 Fetch Nearby Tasks
@@ -50,5 +51,22 @@ export const updateUserLocation = async (req, res) => {
         return successResponse(res, 'User location updated successfully', 200, user);
     } catch (error) {
         return errorResponse(res, 'Server error', 500);
+    }
+};
+
+// 📌 Search Locations (Cities/Colleges)
+export const searchLocations = async (req, res) => {
+    const query = req.query.q;
+    if (!query) return res.json([]);
+
+    try {
+        const locations = await Location.find({
+            name: { $regex: '^' + query, $options: 'i' }, // starts with (case-insensitive)
+        }).limit(10);
+
+        return successResponse(res, 'Locations fetched successfully', 200, locations);
+    } catch (error) {
+        console.error("Error searching locations:", error);
+        return errorResponse(res, error.message || 'Server error', 500);
     }
 };

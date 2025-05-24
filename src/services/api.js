@@ -190,30 +190,6 @@ export const taskAPI = {
         };
       }
 
-      // First check if we can access the task
-      const taskResult = await this.getTask(taskId);
-      if (!taskResult.success) {
-        return taskResult; // Return the error from getTask
-      }
-
-      const task = taskResult.data;
-      const userId = JSON.parse(localStorage.getItem('user'))?._id;
-
-      if (!userId) {
-        return {
-          success: false,
-          message: 'User authentication required',
-          requiresAuth: true
-        };
-      }
-
-      if (!task.applicants || !task.applicants.includes(userId)) {
-        return {
-          success: false,
-          message: 'You must apply for this task first',
-        };
-      }
-
       const response = await api.post(`/tasks/task/mark-ongoing/${taskId}`);
       return { success: true, data: response.data.data };
     } catch (error) {
