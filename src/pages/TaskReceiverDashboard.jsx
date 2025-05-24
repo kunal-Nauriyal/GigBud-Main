@@ -74,6 +74,7 @@ const TaskReceiverDashboard = () => {
           break;
         case 'ongoing':
           response = await taskAPI.getOngoingTasks();
+          console.log("Fetched ongoing tasks:", response.data); // Debug fetched tasks
           setOngoingTasks(new Set(response.data.map(task => task._id)));
           break;
         case 'completed':
@@ -177,9 +178,9 @@ const TaskReceiverDashboard = () => {
 
   const handleMarkOngoing = async (taskId) => {
     try {
+      console.log("User object:", user);
       setLoading(true);
 
-      // First ensure the task is applied
       if (!appliedTasks.has(taskId)) {
         const applyResponse = await taskAPI.applyForTask(taskId);
         if (!applyResponse.success && applyResponse.message !== 'You have already applied for this task') {
@@ -188,9 +189,19 @@ const TaskReceiverDashboard = () => {
         setAppliedTasks(prev => new Set(prev).add(taskId));
       }
 
-      // Then mark as ongoing
+      const taskResponse = await taskAPI.getTask(taskId);
+      if (!taskResponse.success) {
+        throw new Error(taskResponse.message || 'Failed to fetch task details');
+      }
+
+      const task = taskResponse.data;
+      if (task.assignedTo && task.assignedTo !== user.id) {
+        throw new Error('Task is already assigned to another user');
+      }
+
       const ongoingResponse = await taskAPI.markTaskAsOngoing(taskId);
       if (ongoingResponse.success) {
+        console.log("Mark as Ongoing successful, response:", ongoingResponse);
         setOngoingTasks(prev => new Set(prev).add(taskId));
         setAppliedTasks(prev => {
           const newSet = new Set(prev);
@@ -198,6 +209,8 @@ const TaskReceiverDashboard = () => {
           return newSet;
         });
         toast.success('Task marked as in progress');
+        setSearchQuery(''); // Reset search query
+        setFilterType('all'); // Reset filter type
         setActiveTab('ongoing');
         fetchTasks();
       } else {
@@ -278,7 +291,6 @@ const TaskReceiverDashboard = () => {
       const matchesSearch = !searchQuery || 
         task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      
       return matchesSearch;
     })
     .filter(task => {
@@ -407,6 +419,7 @@ const TaskReceiverDashboard = () => {
                   className="mark-ongoing"
                   onClick={(e) => {
                     e.stopPropagation();
+                    console.log("Mark as Ongoing button clicked for task:", task._id);
                     handleMarkOngoing(task._id);
                   }}
                 >

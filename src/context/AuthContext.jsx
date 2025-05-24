@@ -20,59 +20,80 @@ export const AuthProvider = ({ children }) => {
     setUserRole(null);
   };
 
-  const validateToken = async (storedToken) => {
-    try {
-      // Verify token with backend
-      const response = await api.get('/api/auth/verify', {
-        headers: {
-          Authorization: `Bearer ${storedToken}`
-        }
-      });
-      
-      return response.data.valid;
-    } catch (error) {
-      console.error("Token validation failed:", error);
-      return false;
-    }
-  };
+  // Remove token validation - we'll trust stored tokens
+  // Token validation can be done on actual API calls instead
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const checkAuthStatus = () => {
       const storedToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
       
-      if (storedToken && storedToken !== "undefined" && storedToken !== "") {
-        const isValid = await validateToken(storedToken);
-        
-        if (isValid) {
-          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          setToken(storedToken);
-          setIsLoggedIn(true);
-          // You might want to fetch user role here if needed
-        } else {
-          clearAuthState();
-        }
+      if (storedToken && storedToken !== "undefined" && storedToken !== "null" && storedToken.trim() !== "") {
+        // Simply restore the login state from stored token
+        api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        setToken(storedToken);
+        setIsLoggedIn(true);
       }
+      
       setInitialCheckDone(true);
     };
 
     checkAuthStatus();
   }, []);
 
+  // Add API response interceptor to handle token expiration
+  useEffect(() => {
+    const responseInterceptor = api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Token might be expired or invalid
+          console.warn("Unauthorized response, clearing auth state");
+          clearAuthState();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on component unmount
+    return () => {
+      api.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
+
   const login = (newToken, rememberMe = false) => {
-    if (rememberMe) {
-      localStorage.setItem("accessToken", newToken);
-    } else {
-      sessionStorage.setItem("accessToken", newToken);
+    if (!newToken || newToken === "undefined" || newToken === "null") {
+      console.error("Invalid token provided to login");
+      return;
     }
-    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    setToken(newToken);
-    setIsLoggedIn(true);
+
+    try {
+      if (rememberMe) {
+        localStorage.setItem("accessToken", newToken);
+        // Remove from sessionStorage if it exists
+        sessionStorage.removeItem("accessToken");
+      } else {
+        sessionStorage.setItem("accessToken", newToken);
+        // Remove from localStorage if it exists
+        localStorage.removeItem("accessToken");
+      }
+      
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      setToken(newToken);
+      setIsLoggedIn(true);
+    } catch (error) {
+      console.error("Error during login:", error);
+    }
   };
 
   const logout = () => {
     clearAuthState();
     window.location.href = '/'; // Full page reload to clear state
   };
+
+  // Don't render children until initial auth check is complete
+  if (!initialCheckDone) {
+    return <div>Loading...</div>; // Or your loading component
+  }
 
   return (
     <AuthContext.Provider
