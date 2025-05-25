@@ -74,7 +74,6 @@ const TaskReceiverDashboard = () => {
           break;
         case 'ongoing':
           response = await taskAPI.getOngoingTasks();
-          console.log("Fetched ongoing tasks:", response.data); // Debug fetched tasks
           setOngoingTasks(new Set(response.data.map(task => task._id)));
           break;
         case 'completed':
@@ -178,45 +177,41 @@ const TaskReceiverDashboard = () => {
 
   const handleMarkOngoing = async (taskId) => {
     try {
-      console.log("User object:", user);
       setLoading(true);
 
+      // Immediately update UI state
+      setOngoingTasks(prev => new Set(prev).add(taskId));
+      setAppliedTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+
+      // Apply for task if not already applied
       if (!appliedTasks.has(taskId)) {
         const applyResponse = await taskAPI.applyForTask(taskId);
         if (!applyResponse.success && applyResponse.message !== 'You have already applied for this task') {
           throw new Error(applyResponse.message || 'You must apply before starting the task.');
         }
-        setAppliedTasks(prev => new Set(prev).add(taskId));
       }
 
-      const taskResponse = await taskAPI.getTask(taskId);
-      if (!taskResponse.success) {
-        throw new Error(taskResponse.message || 'Failed to fetch task details');
-      }
-
-      const task = taskResponse.data;
-      if (task.assignedTo && task.assignedTo !== user.id) {
-        throw new Error('Task is already assigned to another user');
-      }
-
+      // Mark task as ongoing
       const ongoingResponse = await taskAPI.markTaskAsOngoing(taskId);
-      if (ongoingResponse.success) {
-        console.log("Mark as Ongoing successful, response:", ongoingResponse);
-        setOngoingTasks(prev => new Set(prev).add(taskId));
-        setAppliedTasks(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(taskId);
-          return newSet;
-        });
-        toast.success('Task marked as in progress');
-        setSearchQuery(''); // Reset search query
-        setFilterType('all'); // Reset filter type
-        setActiveTab('ongoing');
-        fetchTasks();
-      } else {
+      if (!ongoingResponse.success) {
         throw new Error(ongoingResponse.message || 'Failed to mark task as in progress');
       }
+
+      toast.success('Task marked as in progress');
+      setActiveTab('ongoing');
+      setTimeout(fetchTasks, 100); // Ensure state updates before refetching
     } catch (err) {
+      // Revert UI state if error occurs
+      setOngoingTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+      setAppliedTasks(prev => new Set(prev).add(taskId));
       toast.error(err.message || 'Failed to mark task as in progress');
     } finally {
       setLoading(false);
@@ -414,19 +409,25 @@ const TaskReceiverDashboard = () => {
               <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
-              {task.status !== 'in-progress' && (
+              {!ongoingTasks.has(task._id) ? (
                 <button
                   className="mark-ongoing"
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log("Mark as Ongoing button clicked for task:", task._id);
                     handleMarkOngoing(task._id);
                   }}
                 >
                   Mark as Ongoing
                 </button>
+              ) : (
+                <button
+                  className="mark-ongoing inprogress"
+                  disabled
+                >
+                  In Progress ✓
+                </button>
               )}
-              {task.status === 'in-progress' && (
+              {ongoingTasks.has(task._id) && (
                 <button
                   className="mark-complete"
                   onClick={(e) => {

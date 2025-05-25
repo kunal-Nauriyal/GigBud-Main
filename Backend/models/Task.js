@@ -18,11 +18,11 @@ const TaskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'applied', 'ongoing', 'completed'],
+      enum: ['pending', 'applied', 'accepted', 'in-progress', 'ongoing', 'completed'], // ✅ fixed
       default: 'pending',
     },
 
-    // Location field (updated to handle both string and GeoJSON)
+    // Location field (GeoJSON + work mode)
     location: {
       type: {
         type: String,

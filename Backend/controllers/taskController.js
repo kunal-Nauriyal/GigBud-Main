@@ -22,12 +22,13 @@ export const createTask = async (req, res) => {
       applicants: [],
     };
 
-    let locationMode = req.body.location?.mode || req.body.location || 'Online';
+    let locationInput = req.body.location || {};
+    let locationMode = locationInput.mode || locationInput || 'Online';
     locationMode = typeof locationMode === 'string' ? locationMode : 'Online';
 
     taskData.location = {
       type: 'Point',
-      coordinates: req.body.location?.coordinates || [0, 0],
+      coordinates: locationInput.coordinates || [0, 0],
       mode: locationMode,
       ...(req.body.address && { address: req.body.address }),
     };
@@ -67,7 +68,7 @@ export const createTask = async (req, res) => {
       Object.assign(taskData, {
         timeRequirement: timeRequirement.trim(),
         jobType: jobType.trim(),
-        skills: Array.isArray(skills) ? skills : (skills?.split(',') || []),
+        skills: Array.isArray(skills) ? skills : (skills?.split(',').map(s => s.trim()) || []),
         workMode,
         budgetPerHour: parseFloat(budgetPerHour),
         ...(additionalNotes && { additionalNotes: additionalNotes.trim() }),
@@ -87,9 +88,6 @@ export const createTask = async (req, res) => {
   }
 };
 
-/**
- * All other exports follow below (unchanged in logic, but validated)
- */
 export const listTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ user: req.user?.id }).sort({ createdAt: -1 });
@@ -140,11 +138,13 @@ export const markTaskAsOngoing = async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (!task) return errorResponse(res, 'Task not found', 404);
 
-    const isApplicant = task.applicants?.some(a => a.user?.toString() === userId);
-    if (!isApplicant) return errorResponse(res, 'Apply first', 403);
+    if (task.assignedTo && task.assignedTo.toString() !== userId) {
+      return errorResponse(res, 'Task already assigned to another user', 403);
+    }
 
-    if (!task.assignedTo) task.assignedTo = userId;
-    else if (task.assignedTo.toString() !== userId) return errorResponse(res, 'Already assigned', 403);
+    if (!task.assignedTo) {
+      task.assignedTo = userId;
+    }
 
     task.status = 'in-progress';
     await task.save();
@@ -162,8 +162,17 @@ export const completeTask = async (req, res) => {
     if (!task) return errorResponse(res, 'Task not found', 404);
 
     const userId = req.user?.id;
-    if (task.user.toString() !== userId && task.assignedTo?.toString() !== userId) {
-      return errorResponse(res, 'Unauthorized', 403);
+
+    // ✅ Updated permission check
+    const isCreator = task.user.toString() === userId;
+    const isAssigned = task.assignedTo?.toString() === userId;
+
+    if (!isCreator && !isAssigned) {
+      return errorResponse(
+        res,
+        `Only the assigned user or task creator can complete this task`,
+        403
+      );
     }
 
     task.status = 'completed';
