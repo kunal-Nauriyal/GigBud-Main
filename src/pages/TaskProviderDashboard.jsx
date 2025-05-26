@@ -7,12 +7,6 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Mock data for demonstration
-const mockApplicants = [
-  { id: 1, name: 'John Doe', rating: 4.5, proposedPrice: 500, taskId: 1 },
-  { id: 2, name: 'Jane Smith', rating: 4.8, proposedPrice: 450, taskId: 1 },
-];
-
 // Provider profile mock data
 const initialProviderProfile = {
   image: 'https://randomuser.me/api/portraits/men/45.jpg',
@@ -43,6 +37,7 @@ const TaskProviderDashboard = () => {
   const [editProviderMode, setEditProviderMode] = useState(false);
   const [editableProviderProfile, setEditableProviderProfile] = useState(initialProviderProfile);
   const [taskCreated, setTaskCreated] = useState(false);
+  const [viewingProfile, setViewingProfile] = useState(null);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -119,7 +114,7 @@ const TaskProviderDashboard = () => {
 
   const handleAssignTask = async (taskId, applicantId) => {
     try {
-      await taskAPI.acceptTask(taskId);
+      await taskAPI.acceptTask(taskId, applicantId);
       toast.success('Task assigned successfully');
       setTaskCreated(prev => !prev);
     } catch (err) {
@@ -135,6 +130,10 @@ const TaskProviderDashboard = () => {
     } catch (err) {
       toast.error(err.message || 'Failed to delete task');
     }
+  };
+
+  const handleViewProfile = (applicant) => {
+    setViewingProfile(applicant);
   };
 
   useEffect(() => {
@@ -160,19 +159,9 @@ const TaskProviderDashboard = () => {
     setSelectedTask(null);
   };
 
-  const handleAssign = (applicantId) => {
-    console.log(`Assigned task to applicant ${applicantId}`);
-    setTaskCreated(prev => !prev);
-  };
-
   const handleGiveRating = (taskId) => {
     console.log(`Giving rating for task ${taskId}`);
   };
-
-  const applicantsByTask = tasks.map(task => ({
-    ...task,
-    applicants: mockApplicants.filter(a => a.taskId === task._id)
-  }));
 
   const handleViewAllApplicants = (task) => {
     setSelectedApplicantsTask(task);
@@ -184,20 +173,15 @@ const TaskProviderDashboard = () => {
     setSelectedApplicantsTask(null);
   };
 
-  const handleViewApplicantProfile = (applicant) => {
-    setSelectedApplicant(applicant);
-    setShowApplicantProfileModal(true);
-  };
-
-  const handleCloseApplicantProfileModal = () => {
-    setShowApplicantProfileModal(false);
-  };
-
   const getTaskDisplayTitle = (task) => {
     return task.jobType || task.title || "Untitled Task";
   };
 
-  // Helper function to render location
+  const getApplicantsForTask = (taskId) => {
+    const task = tasks.find(t => t._id === taskId);
+    return task?.applicants || [];
+  };
+
   const renderLocation = (location) => {
     if (!location) return null;
     
@@ -206,7 +190,6 @@ const TaskProviderDashboard = () => {
     }
     
     if (typeof location === 'object') {
-      // Handle GeoJSON or other location objects
       if (location.address) return location.address;
       if (location.coordinates) return `Location: ${location.coordinates.join(', ')}`;
       return JSON.stringify(location);
@@ -238,6 +221,9 @@ const TaskProviderDashboard = () => {
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
               <span className={`status-badge ${task.status}`}>{task.status}</span>
+              {task.applicants?.length > 0 && (
+                <p>Applicants: {task.applicants.length}</p>
+              )}
             </div>
           ))
         ) : (
@@ -260,7 +246,7 @@ const TaskProviderDashboard = () => {
               style={{ cursor: 'pointer' }}
             >
               <h3>{getTaskDisplayTitle(task)}</h3>
-              <p>Assigned to: {task.assignedTo}</p>
+              <p>Assigned to: {task.assignedTo?.name || 'Unknown'}</p>
               <button
                 className="primary-button"
                 onClick={(e) => {
@@ -292,7 +278,7 @@ const TaskProviderDashboard = () => {
               style={{ cursor: 'pointer' }}
             >
               <h3>{getTaskDisplayTitle(task)}</h3>
-              <p>Completed by: {task.completedBy}</p>
+              <p>Completed by: {task.completedBy?.name || 'Unknown'}</p>
               <button
                 className="primary-button"
                 onClick={(e) => {
@@ -395,19 +381,6 @@ const TaskProviderDashboard = () => {
         return renderCreateTask();
     }
   };
-
-  const getApplicantsForTask = (taskId) => mockApplicants.filter(a => a.taskId === taskId);
-
-  const getApplicantProfile = (applicant) => ({
-    ...applicant,
-    image: applicant.image || 'https://randomuser.me/api/portraits/men/32.jpg',
-    age: applicant.age || 28,
-    profession: applicant.profession || 'Web Developer',
-    phone: applicant.phone || '+91-9876543210',
-    email: applicant.email || 'applicant@email.com',
-    phoneVerified: applicant.phoneVerified !== undefined ? applicant.phoneVerified : true,
-    emailVerified: applicant.emailVerified !== undefined ? applicant.emailVerified : false,
-  });
 
   const [editMode, setEditMode] = useState(false);
   const [editableProfile, setEditableProfile] = useState(null);
@@ -580,14 +553,19 @@ const TaskProviderDashboard = () => {
                   <h3>Applicants</h3>
                   <div className="applicants-list">
                     {getApplicantsForTask(selectedTask._id).map(applicant => (
-                      <div key={applicant.id} className="applicant-card">
-                        <h4>{applicant.name}</h4>
-                        <p>Rating: {applicant.rating} ⭐</p>
-                        <p>Proposed Price: ₹{applicant.proposedPrice}</p>
-                        <button className="primary-button" onClick={() => {
-                          setSelectedApplicant(applicant);
-                          setShowApplicantProfileModal(true);
-                        }}>View Profile</button>
+                      <div key={applicant._id} className="applicant-card">
+                        <h4>{applicant.user?.name || 'Unnamed User'}</h4>
+                        <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                        <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
+                        <button
+                          className="primary-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewProfile(applicant);
+                          }}
+                        >
+                          View Profile
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -598,82 +576,39 @@ const TaskProviderDashboard = () => {
         </div>
       )}
 
-      {showApplicantProfileModal && selectedApplicant && (
-        <div className="modal-overlay" onClick={() => { setShowApplicantProfileModal(false); setEditMode(false); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-back" onClick={() => { setShowApplicantProfileModal(false); setEditMode(false); }}>&larr; Back</button>
-            <button className="modal-close" onClick={() => { setShowApplicantProfileModal(false); setEditMode(false); }}>×</button>
-            <div className="modal-header">
-              <h2>{editMode ? 'Edit Profile' : `${selectedApplicant.name}'s Profile`}</h2>
-            </div>
-            <div className="modal-body">
-              {(() => {
-                const profile = editMode ? editableProfile : getApplicantProfile(selectedApplicant);
-                return (
-                  <div className="profile-modal-content">
-                    <div className="profile-image-row">
-                      <img src={profile.image} alt="Profile" className="profile-image" />
-                      {editMode && (
-                        <input type="text" name="image" value={profile.image} onChange={handleProfileInputChange} placeholder="Image URL" className="profile-image-input" />
-                      )}
-                    </div>
-                    <div className="profile-fields">
-                      <div className="profile-field">
-                        <label>Name:</label>
-                        {editMode ? (
-                          <input type="text" name="name" value={profile.name} onChange={handleProfileInputChange} />
-                        ) : (
-                          <span>{profile.name}</span>
-                        )}
-                      </div>
-                      <div className="profile-field">
-                        <label>Age:</label>
-                        {editMode ? (
-                          <input type="number" name="age" value={profile.age} onChange={handleProfileInputChange} />
-                        ) : (
-                          <span>{profile.age}</span>
-                        )}
-                      </div>
-                      <div className="profile-field">
-                        <label>Profession:</label>
-                        {editMode ? (
-                          <input type="text" name="profession" value={profile.profession} onChange={handleProfileInputChange} />
-                        ) : (
-                          <span>{profile.profession}</span>
-                        )}
-                      </div>
-                      <div className="profile-field">
-                        <label>Phone:</label>
-                        {editMode ? (
-                          <input type="text" name="phone" value={profile.phone} onChange={handleProfileInputChange} />
-                        ) : (
-                          <span>{profile.phone}</span>
-                        )}
-                        <span className={`verify-badge ${profile.phoneVerified ? 'verified' : 'not-verified'}`}>{profile.phoneVerified ? '✔ Verified' : 'Not Verified'}</span>
-                      </div>
-                      <div className="profile-field">
-                        <label>Email:</label>
-                        {editMode ? (
-                          <input type="email" name="email" value={profile.email} onChange={handleProfileInputChange} />
-                        ) : (
-                          <span>{profile.email}</span>
-                        )}
-                        <span className={`verify-badge ${profile.emailVerified ? 'verified' : 'not-verified'}`}>{profile.emailVerified ? '✔ Verified' : 'Not Verified'}</span>
-                      </div>
-                    </div>
-                    <div className="profile-modal-actions">
-                      {editMode ? (
-                        <>
-                          <button className="primary-button" onClick={handleSaveProfile}>Save</button>
-                          <button className="secondary-button" onClick={handleCancelEdit}>Cancel</button>
-                        </>
-                      ) : (
-                        <button className="primary-button" onClick={handleEditProfile}>Edit</button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
+      {viewingProfile && (
+        <div className="modal-overlay" onClick={() => setViewingProfile(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setViewingProfile(null)}>×</button>
+            <h2>{viewingProfile.user?.name || 'Applicant Profile'}</h2>
+            <div className="profile-details">
+              {viewingProfile.user?.image && (
+                <img src={viewingProfile.user.image} alt="Profile" className="profile-image" />
+              )}
+              <div className="profile-field">
+                <label>Email:</label>
+                <span>{viewingProfile.user?.email || 'Not available'}</span>
+              </div>
+              <div className="profile-field">
+                <label>Rating:</label>
+                <span>{viewingProfile.rating || 'No rating'} ⭐</span>
+              </div>
+              <div className="profile-field">
+                <label>Proposed Price:</label>
+                <span>₹{viewingProfile.proposedPrice || 'Not specified'}</span>
+              </div>
+              {viewingProfile.user?.phone && (
+                <div className="profile-field">
+                  <label>Phone:</label>
+                  <span>{viewingProfile.user.phone}</span>
+                </div>
+              )}
+              {viewingProfile.user?.skills && (
+                <div className="profile-field">
+                  <label>Skills:</label>
+                  <span>{Array.isArray(viewingProfile.user.skills) ? viewingProfile.user.skills.join(", ") : viewingProfile.user.skills}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

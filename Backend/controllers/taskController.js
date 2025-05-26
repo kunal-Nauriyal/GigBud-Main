@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Task from '../models/Task.js';
+import User from '../models/userModel.js'; // ⬅️ Required for populate
 import { successResponse, errorResponse } from '../views/responseTemplates.js';
 
 /**
@@ -90,7 +91,15 @@ export const createTask = async (req, res) => {
 
 export const listTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ user: req.user?.id }).sort({ createdAt: -1 });
+    const tasks = await Task.find({ user: req.user?.id })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: 'applicants.user',
+        select: 'name email phone image rating' // Added rating to selected fields
+      })
+      .populate('assignedTo', 'name email phone image rating') // Added populate for assignedTo
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
+
     return successResponse(res, 'Tasks retrieved successfully', 200, tasks);
   } catch (error) {
     console.error('Error listing tasks:', error);
@@ -100,7 +109,14 @@ export const listTasks = async (req, res) => {
 
 export const getTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findById(req.params.id)
+      .populate({
+        path: 'applicants.user',
+        select: 'name email phone image rating' // Added rating to selected fields
+      })
+      .populate('assignedTo', 'name email phone image rating') // Added populate for assignedTo
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
+
     if (!task) return errorResponse(res, 'Task not found', 404);
 
     const userId = req.user?.id;
@@ -162,17 +178,11 @@ export const completeTask = async (req, res) => {
     if (!task) return errorResponse(res, 'Task not found', 404);
 
     const userId = req.user?.id;
-
-    // ✅ Updated permission check
     const isCreator = task.user.toString() === userId;
     const isAssigned = task.assignedTo?.toString() === userId;
 
     if (!isCreator && !isAssigned) {
-      return errorResponse(
-        res,
-        `Only the assigned user or task creator can complete this task`,
-        403
-      );
+      return errorResponse(res, 'Only the assigned user or task creator can complete this task', 403);
     }
 
     task.status = 'completed';
@@ -202,7 +212,10 @@ export const deleteTask = async (req, res) => {
 
 export const getAvailableTasks = async (_req, res) => {
   try {
-    const tasks = await Task.find({ assignedTo: null, status: 'pending' }).sort({ createdAt: -1 });
+    const tasks = await Task.find({ assignedTo: null, status: 'pending' })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
+
     return successResponse(res, 'Available tasks retrieved', 200, tasks);
   } catch (error) {
     console.error('Error retrieving available tasks:', error);
@@ -212,7 +225,10 @@ export const getAvailableTasks = async (_req, res) => {
 
 export const getTasksByProvider = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedTo: req.user?.id }).sort({ createdAt: -1 });
+    const tasks = await Task.find({ assignedTo: req.user?.id })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
+
     return successResponse(res, 'Tasks retrieved for provider', 200, tasks);
   } catch (error) {
     console.error('Error retrieving provider tasks:', error);
@@ -245,7 +261,9 @@ export const getAppliedTasks = async (req, res) => {
   try {
     const userId = req.user?.id;
     const objectId = new mongoose.Types.ObjectId(userId);
-    const tasks = await Task.find({ 'applicants.user': objectId }).sort({ createdAt: -1 });
+    const tasks = await Task.find({ 'applicants.user': objectId })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
 
     return successResponse(res, 'Applied tasks retrieved', 200, tasks);
   } catch (error) {
@@ -256,7 +274,10 @@ export const getAppliedTasks = async (req, res) => {
 
 export const getSavedTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ savedBy: req.user?.id }).sort({ createdAt: -1 });
+    const tasks = await Task.find({ savedBy: req.user?.id })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
+
     return successResponse(res, 'Saved tasks retrieved', 200, tasks);
   } catch (error) {
     console.error('Error retrieving saved tasks:', error);
@@ -269,7 +290,9 @@ export const getOngoingTasks = async (req, res) => {
     const tasks = await Task.find({
       assignedTo: req.user?.id,
       status: { $in: ['in-progress', 'accepted'] }
-    }).sort({ createdAt: -1 });
+    })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
 
     return successResponse(res, 'Ongoing tasks retrieved', 200, tasks);
   } catch (error) {
@@ -283,7 +306,9 @@ export const getCompletedTasks = async (req, res) => {
     const tasks = await Task.find({
       assignedTo: req.user?.id,
       status: 'completed'
-    }).sort({ createdAt: -1 });
+    })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email phone image rating'); // Added populate for task creator
 
     return successResponse(res, 'Completed tasks retrieved', 200, tasks);
   } catch (error) {

@@ -2,46 +2,49 @@ import mongoose from 'mongoose';
 
 const TaskSchema = new mongoose.Schema(
   {
-    // Common fields for both task types
+    // Creator of the task
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
+
     taskType: {
       type: String,
       enum: ['normal', 'timebuyer'],
       required: true,
     },
+
     attachment: {
       type: String,
     },
+
     status: {
       type: String,
-      enum: ['pending', 'applied', 'accepted', 'in-progress', 'ongoing', 'completed'], // ✅ fixed
+      enum: ['pending', 'applied', 'accepted', 'in-progress', 'ongoing', 'completed'],
       default: 'pending',
     },
 
-    // Location field (GeoJSON + work mode)
+    // Geo + mode + optional address
     location: {
       type: {
         type: String,
         enum: ['Point'],
-        default: 'Point'
+        default: 'Point',
       },
       coordinates: {
         type: [Number],
-        default: [0, 0]
+        default: [0, 0],
       },
       mode: {
         type: String,
         enum: ['Online', 'In-Person'],
-        required: true
+        required: true,
       },
-      address: String
+      address: String,
     },
 
-    // Normal Task specific fields
+    // Fields for 'normal' type
     title: {
       type: String,
       required: function () {
@@ -67,7 +70,7 @@ const TaskSchema = new mongoose.Schema(
       },
     },
 
-    // Time Buyer Task specific fields
+    // Fields for 'timebuyer' type
     timeRequirement: {
       type: String,
       required: function () {
@@ -103,14 +106,16 @@ const TaskSchema = new mongoose.Schema(
       type: String,
     },
 
-    // Applicants array for task applications
+    // Applicants: including reference + custom info
     applicants: [
       {
         user: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User',
         },
-        proposedPrice: Number,
+        proposedPrice: {
+          type: Number,
+        },
         status: {
           type: String,
           enum: ['pending', 'accepted', 'rejected'],
@@ -123,13 +128,13 @@ const TaskSchema = new mongoose.Schema(
       },
     ],
 
-    // Assignment tracking
+    // Assignment status
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
 
-    // SavedBy array to track users who saved the task
+    // Track users who saved the task
     savedBy: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -140,9 +145,8 @@ const TaskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Add 2dsphere index for location queries
+// Indexing for location-based queries
 TaskSchema.index({ 'location.coordinates': '2dsphere' });
 
-// Export model
 const Task = mongoose.model('Task', TaskSchema);
 export default Task;
