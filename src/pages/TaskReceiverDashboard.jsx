@@ -124,10 +124,10 @@ const TaskReceiverDashboard = () => {
   const handleApplyTask = async (taskId) => {
     try {
       setLoading(true);
-      setAppliedTasks(prev => new Set(prev).add(taskId));
 
       const applyResponse = await taskAPI.applyForTask(taskId);
       if (applyResponse.success) {
+        setAppliedTasks(prev => new Set(prev).add(taskId));
         toast.success('Application submitted');
         setActiveTab('applied');
         fetchTasks();
@@ -135,12 +135,7 @@ const TaskReceiverDashboard = () => {
         throw new Error(applyResponse.message || 'Failed to apply for task');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to apply for task');
-      setAppliedTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
-      });
+      toast.error(err.response?.data?.message || err.message || 'Failed to apply for task');
     } finally {
       setLoading(false);
     }
@@ -149,27 +144,17 @@ const TaskReceiverDashboard = () => {
   const handleSaveTask = async (taskId) => {
     try {
       setLoading(true);
-      setSavedTasks(prev => new Set(prev).add(taskId));
       
       const response = await taskAPI.saveTask(taskId);
       if (response.success) {
+        setSavedTasks(prev => new Set(prev).add(taskId));
         toast.success('Task saved successfully');
         fetchTasks();
       } else {
-        setSavedTasks(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(taskId);
-          return newSet;
-        });
         throw new Error(response.message || 'Failed to save task');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to save task');
-      setSavedTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
-      });
+      toast.error(err.response?.data?.message || err.message || 'Failed to save task');
     } finally {
       setLoading(false);
     }
@@ -178,14 +163,6 @@ const TaskReceiverDashboard = () => {
   const handleMarkOngoing = async (taskId) => {
     try {
       setLoading(true);
-
-      // Immediately update UI state
-      setOngoingTasks(prev => new Set(prev).add(taskId));
-      setAppliedTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
-      });
 
       // Apply for task if not already applied
       if (!appliedTasks.has(taskId)) {
@@ -201,18 +178,19 @@ const TaskReceiverDashboard = () => {
         throw new Error(ongoingResponse.message || 'Failed to mark task as in progress');
       }
 
-      toast.success('Task marked as in progress');
-      setActiveTab('ongoing');
-      setTimeout(fetchTasks, 100); // Ensure state updates before refetching
-    } catch (err) {
-      // Revert UI state if error occurs
-      setOngoingTasks(prev => {
+      // Update UI state after successful API calls
+      setOngoingTasks(prev => new Set(prev).add(taskId));
+      setAppliedTasks(prev => {
         const newSet = new Set(prev);
         newSet.delete(taskId);
         return newSet;
       });
-      setAppliedTasks(prev => new Set(prev).add(taskId));
-      toast.error(err.message || 'Failed to mark task as in progress');
+
+      toast.success('Task marked as in progress');
+      setActiveTab('ongoing');
+      setTimeout(fetchTasks, 100); // Ensure state updates before refetching
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to mark task as in progress');
     } finally {
       setLoading(false);
     }
@@ -271,7 +249,7 @@ const TaskReceiverDashboard = () => {
         throw new Error(response.message || 'Failed to mark task as complete');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to mark task as complete');
+      toast.error(err.response?.data?.message || err.message || 'Failed to mark task as complete');
     } finally {
       setLoading(false);
     }

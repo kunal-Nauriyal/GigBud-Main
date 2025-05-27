@@ -181,6 +181,34 @@ export const taskAPI = {
     }
   },
 
+  assignTask: async (taskId, applicantId) => {
+    try {
+      if (!taskId) {
+        return {
+          success: false,
+          message: 'Task ID is required'
+        };
+      }
+
+      if (!applicantId) {
+        return {
+          success: false,
+          message: 'Applicant ID is required'
+        };
+      }
+
+      const response = await api.post(`/tasks/task/assign/${taskId}`, { applicantId });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to assign task',
+        error: error.response?.data,
+        statusCode: error.response?.status
+      };
+    }
+  },
+
   markTaskAsOngoing: async (taskId) => {
     try {
       if (!taskId) {
@@ -316,7 +344,7 @@ export const taskAPI = {
     }
   },
 
-  applyForTask: async (taskId) => {
+  applyForTask: async (taskId, data = {}) => {
     try {
       if (!taskId) {
         return {
@@ -325,7 +353,7 @@ export const taskAPI = {
         };
       }
 
-      const response = await api.post(`/tasks/task/apply/${taskId}`);
+      const response = await api.post(`/tasks/task/apply/${taskId}`, data);
       return { success: true, data: response.data.data };
     } catch (error) {
       return {

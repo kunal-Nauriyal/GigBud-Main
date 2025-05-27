@@ -39,6 +39,19 @@ const TaskProviderDashboard = () => {
   const [taskCreated, setTaskCreated] = useState(false);
   const [viewingProfile, setViewingProfile] = useState(null);
 
+  const getDisplayStatus = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'open';
+      case 'accepted':
+        return 'assigned';
+      case 'completed':
+        return 'closed';
+      default:
+        return status;
+    }
+  };
+
   useEffect(() => {
     if (!isLoggedIn) {
       toast.error('Please login to continue');
@@ -59,7 +72,7 @@ const TaskProviderDashboard = () => {
         let filteredTasks = response.data || [];
         switch (activeTab) {
           case 'posted':
-            filteredTasks = filteredTasks.filter(task => task.status === 'pending');
+            filteredTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'accepted' || task.status === 'completed');
             break;
           case 'ongoing':
             filteredTasks = filteredTasks.filter(task => task.status === 'accepted');
@@ -114,9 +127,10 @@ const TaskProviderDashboard = () => {
 
   const handleAssignTask = async (taskId, applicantId) => {
     try {
-      await taskAPI.acceptTask(taskId, applicantId);
+      await taskAPI.assignTask(taskId, applicantId);
       toast.success('Task assigned successfully');
       setTaskCreated(prev => !prev);
+      setIsModalOpen(false);
     } catch (err) {
       toast.error(err.message || 'Failed to assign task');
     }
@@ -220,7 +234,7 @@ const TaskProviderDashboard = () => {
             >
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-              <span className={`status-badge ${task.status}`}>{task.status}</span>
+              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
               {task.applicants?.length > 0 && (
                 <p>Applicants: {task.applicants.length}</p>
               )}
@@ -247,6 +261,7 @@ const TaskProviderDashboard = () => {
             >
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Assigned to: {task.assignedTo?.name || 'Unknown'}</p>
+              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
               <button
                 className="primary-button"
                 onClick={(e) => {
@@ -279,6 +294,7 @@ const TaskProviderDashboard = () => {
             >
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Completed by: {task.completedBy?.name || 'Unknown'}</p>
+              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
               <button
                 className="primary-button"
                 onClick={(e) => {
@@ -476,7 +492,7 @@ const TaskProviderDashboard = () => {
             <button className="modal-close" onClick={handleCloseModal}>×</button>
             <div className="modal-header">
               <h2>{selectedTask.jobType || selectedTask.title || "Untitled Task"}</h2>
-              <span className={`status-badge ${selectedTask.status}`}>{selectedTask.status}</span>
+              <span className={`status-badge ${getDisplayStatus(selectedTask.status)}`}>{getDisplayStatus(selectedTask.status)}</span>
             </div>
             <div className="modal-body">
               <div className="detail-section">
@@ -557,15 +573,26 @@ const TaskProviderDashboard = () => {
                         <h4>{applicant.user?.name || 'Unnamed User'}</h4>
                         <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
                         <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
-                        <button
-                          className="primary-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewProfile(applicant);
-                          }}
-                        >
-                          View Profile
-                        </button>
+                        <div className="applicant-actions">
+                          <button
+                            className="secondary-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProfile(applicant);
+                            }}
+                          >
+                            View Profile
+                          </button>
+                          <button
+                            className="primary-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAssignTask(selectedTask._id, applicant.user._id);
+                            }}
+                          >
+                            Assign To
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

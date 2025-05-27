@@ -14,7 +14,8 @@ import {
   getOngoingTasks,
   getCompletedTasks,
   saveTask,
-  markTaskAsOngoing
+  markTaskAsOngoing,
+  assignTaskByProvider
 } from '../controllers/taskController.js';
 
 import authMiddleware from '../middleware/authMiddleware.js';
@@ -45,6 +46,9 @@ router.post('/task/save/:id', authMiddleware, saveTask);
 
 // Accept a task
 router.post('/task/accept/:id', authMiddleware, acceptTask);
+
+// Assign a task to an applicant (by task creator)
+router.post('/task/assign/:id', authMiddleware, assignTaskByProvider);
 
 // Mark task as ongoing
 router.post('/task/mark-ongoing/:id', authMiddleware, markTaskAsOngoing);
