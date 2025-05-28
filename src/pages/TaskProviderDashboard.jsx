@@ -235,9 +235,7 @@ const TaskProviderDashboard = () => {
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
               <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-              {task.applicants?.length > 0 && (
-                <p>Applicants: {task.applicants.length}</p>
-              )}
+              <p className="applicants-count">Applicants: {task.applicants?.length > 0 ? task.applicants.length : 0}</p>
             </div>
           ))
         ) : (
@@ -570,9 +568,16 @@ const TaskProviderDashboard = () => {
                   <div className="applicants-list">
                     {getApplicantsForTask(selectedTask._id).map(applicant => (
                       <div key={applicant._id} className="applicant-card">
-                        <h4>{applicant.user?.name || 'Unnamed User'}</h4>
-                        <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
-                        <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
+                        <img 
+                          src={applicant.user?.profilePictureUrl || 'placeholder-image-url.jpg'}
+                          alt="Applicant's profile picture"
+                          style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
+                        />
+                        <div className="applicant-info">
+                          <h4>{applicant.user?.name || 'Unnamed User'}</h4>
+                          <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                          <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
+                        </div>
                         <div className="applicant-actions">
                           <button
                             className="secondary-button"

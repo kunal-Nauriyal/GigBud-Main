@@ -27,10 +27,11 @@ const TaskReceiverDashboard = () => {
   const [location, setLocation] = useState('');
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationInput, setLocationInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [ratings, setRatings] = useState({});
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [sortBy, setSortBy] = useState('latest');
   const [filterType, setFilterType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [ratings, setRatings] = useState({});
   const [appliedTasks, setAppliedTasks] = useState(new Set());
   const [savedTasks, setSavedTasks] = useState(new Set());
   const [ongoingTasks, setOngoingTasks] = useState(new Set());
@@ -583,6 +584,15 @@ const TaskReceiverDashboard = () => {
             {location ? `Location: ${location}` : 'Add Location'}
           </button>
           
+          {/* Filter button */}
+          <button
+            className="gigbud-tab-btn"
+            onClick={() => setShowFilterModal(true)}
+          >
+            <span style={{ fontSize: 22, marginRight: 12 }}>🔍</span>
+            Filters
+          </button>
+          
           {/* Tab buttons */}
           {TAB_LIST.map(tab => (
             <button
@@ -594,32 +604,6 @@ const TaskReceiverDashboard = () => {
               {tab.label}
             </button>
           ))}
-
-          {/* Sort and Filter UI */}
-          <div className="gigbud-sidebar-filters">
-            <label>Sort by:</label>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select"
-            >
-              <option value="latest">Latest Added</option>
-              <option value="deadline">Deadline</option>
-              <option value="budgetHigh">Budget High to Low</option>
-              <option value="budgetLow">Budget Low to High</option>
-            </select>
-
-            <label>Filter by Type:</label>
-            <select 
-              value={filterType} 
-              onChange={(e) => setFilterType(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Types</option>
-              <option value="timebuyer">Time-Based</option>
-              <option value="normal">Regular Tasks</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -646,6 +630,125 @@ const TaskReceiverDashboard = () => {
           {renderMainContent()}
         </div>
       </main>
+
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <div className="gigbud-modal-bg" onClick={() => setShowFilterModal(false)}>
+          <div className="gigbud-modal filter-modal" onClick={e => e.stopPropagation()}>
+            <div className="filter-modal-header">
+              <h2>Filter & Sort Tasks</h2>
+              <button className="close-modal" onClick={() => setShowFilterModal(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="filter-grid">
+                {/* Sort Tasks */}
+                <div className="filter-row">
+                  <div className="filter-label">
+                    <span className="filter-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M7 10l5 5 5-5M7 14l5-5 5 5"/>
+                      </svg>
+                    </span>
+                    <span>Sort Tasks</span>
+                  </div>
+                  <div className="filter-control">
+                    <select 
+                      value={sortBy} 
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="latest">Latest Added</option>
+                      <option value="deadline">Earliest Deadline</option>
+                      <option value="budgetLow">Lowest Budget</option>
+                      <option value="budgetHigh">Highest Budget</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="filter-divider"></div>
+
+                {/* Filter by Type */}
+                <div className="filter-row">
+                  <div className="filter-label">
+                    <span className="filter-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                      </svg>
+                    </span>
+                    <span>Filter by Type</span>
+                  </div>
+                  <div className="filter-control">
+                    <select 
+                      value={filterType} 
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="normal">Regular</option>
+                      <option value="timebuyer">One-Time</option>
+                      <option value="recurring">Recurring</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="filter-divider"></div>
+
+                {/* Location Filter */}
+                <div className="filter-row">
+                  <div className="filter-label">
+                    <span className="filter-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                      </svg>
+                    </span>
+                    <span>Location</span>
+                  </div>
+                  <div className="filter-control location-control">
+                    <input 
+                      type="text" 
+                      value={location || "No location set"} 
+                      disabled 
+                      className="location-input"
+                    />
+                    <button 
+                      className="change-location-btn"
+                      onClick={() => {
+                        setShowFilterModal(false);
+                        setShowLocationModal(true);
+                      }}
+                    >
+                      Change
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  className="reset-filters"
+                  onClick={() => {
+                    setSortBy('latest');
+                    setFilterType('all');
+                  }}
+                >
+                  Reset Filters
+                </button>
+                <button 
+                  className="apply-filters"
+                  onClick={() => setShowFilterModal(false)}
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Location Modal */}
       {showLocationModal && (

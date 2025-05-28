@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import DashboardNavbar from "./components/DashboardNavbar";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Services from "./pages/Services";
@@ -35,9 +34,7 @@ function App() {
           handleLogout={logout}
         />
 
-        {isLoggedIn && <DashboardNavbar />}
-
-        <main className="content">
+        <main className="content" style={{ paddingTop: "70px" }}>
           <Routes>
             <Route path="/" element={<Home openLoginModal={openLoginModal} />} />
             <Route path="/about" element={<About />} />

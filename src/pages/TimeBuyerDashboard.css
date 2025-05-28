@@ -45,7 +45,7 @@
 /* Task List */
 .task-list {
     height: calc(100vh - 100px);
-    width: 30rem !important;
+  
     background: white;
     padding: 5px;
     border-radius: 8px;
