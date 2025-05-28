@@ -293,7 +293,7 @@ const TaskProviderDashboard = () => {
               style={{ cursor: 'pointer' }}
             >
               <h3>{getTaskDisplayTitle(task)}</h3>
-              <p>Completed by: {task.completedBy?.name || 'Unknown'}</p>
+              <p>Completed by: {task.assignedTo?.name || task.completedBy?.name || 'Unknown'}</p>
               <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
               <button
                 className="primary-button"
@@ -564,7 +564,7 @@ const TaskProviderDashboard = () => {
                 </div>
               </div>
 
-              {getApplicantsForTask(selectedTask._id).length > 0 && (
+              {selectedTask.status === 'pending' && getApplicantsForTask(selectedTask._id).length > 0 && (
                 <div className="detail-section">
                   <h3>Applicants</h3>
                   <div className="applicants-list">
