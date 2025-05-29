@@ -235,7 +235,9 @@ const TaskProviderDashboard = () => {
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
               <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-              <p className="applicants-count">Applicants: {task.applicants?.length > 0 ? task.applicants.length : 0}</p>
+              {task.applicants?.length > 0 && (
+                <p>Applicants: {task.applicants.length}</p>
+              )}
             </div>
           ))
         ) : (
@@ -562,44 +564,74 @@ const TaskProviderDashboard = () => {
                 </div>
               </div>
 
-              {selectedTask.status === 'pending' && getApplicantsForTask(selectedTask._id).length > 0 && (
+              {getApplicantsForTask(selectedTask._id).length > 0 && (
                 <div className="detail-section">
-                  <h3>Applicants</h3>
+                  <h3>{selectedTask.status === 'completed' ? 'Completed By' : 'Applicants'}</h3>
                   <div className="applicants-list">
-                    {getApplicantsForTask(selectedTask._id).map(applicant => (
-                      <div key={applicant._id} className="applicant-card">
+                    {selectedTask.status === 'completed' ? (
+                      <div className="applicant-card">
                         <img 
-                          src={applicant.user?.profilePictureUrl || 'placeholder-image-url.jpg'}
-                          alt="Applicant's profile picture"
+                          src={selectedTask.completedBy?.profilePictureUrl || selectedTask.assignedTo?.profilePictureUrl || 'placeholder-image-url.jpg'}
+                          alt="Completed by"
                           style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
                         />
                         <div className="applicant-info">
-                          <h4>{applicant.user?.name || 'Unnamed User'}</h4>
-                          <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
-                          <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
-                        </div>
-                        <div className="applicant-actions">
-                          <button
-                            className="secondary-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewProfile(applicant);
-                            }}
-                          >
-                            View Profile
-                          </button>
-                          <button
-                            className="primary-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAssignTask(selectedTask._id, applicant.user._id);
-                            }}
-                          >
-                            Assign To
-                          </button>
+                          <h4>{selectedTask.completedBy?.name || selectedTask.assignedTo?.name || 'Unnamed User'}</h4>
+                          <p>Email: {selectedTask.completedBy?.email || selectedTask.assignedTo?.email || 'Not available'}</p>
+                          <p>Phone: {selectedTask.completedBy?.phone || selectedTask.assignedTo?.phone || 'Not available'}</p>
+                          <span className="status-badge completed">Completed</span>
                         </div>
                       </div>
-                    ))}
+                    ) : selectedTask.status === 'accepted' && selectedTask.assignedTo ? (
+                      <div className="applicant-card">
+                        <img 
+                          src={selectedTask.assignedTo.profilePictureUrl || 'placeholder-image-url.jpg'}
+                          alt="Assigned applicant"
+                          style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
+                        />
+                        <div className="applicant-info">
+                          <h4>{selectedTask.assignedTo.name || 'Unnamed User'}</h4>
+                          <p>Email: {selectedTask.assignedTo.email || 'Not available'}</p>
+                          <p>Phone: {selectedTask.assignedTo.phone || 'Not available'}</p>
+                          <span className="status-badge assigned">Assigned</span>
+                        </div>
+                      </div>
+                    ) : (
+                      getApplicantsForTask(selectedTask._id).map(applicant => (
+                        <div key={applicant._id} className="applicant-card">
+                          <img 
+                            src={applicant.user?.profilePictureUrl || 'placeholder-image-url.jpg'}
+                            alt="Applicant's profile picture"
+                            style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
+                          />
+                          <div className="applicant-info">
+                            <h4>{applicant.user?.name || 'Unnamed User'}</h4>
+                            <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                            <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
+                          </div>
+                          <div className="applicant-actions">
+                            <button
+                              className="secondary-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProfile(applicant);
+                              }}
+                            >
+                              View Profile
+                            </button>
+                            <button
+                              className="primary-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAssignTask(selectedTask._id, applicant.user._id);
+                              }}
+                            >
+                              Assign To
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
