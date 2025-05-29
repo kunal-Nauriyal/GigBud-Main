@@ -14,7 +14,21 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true
+    required: function() {
+      return !this.isGoogleUser; // Only required for non-Google users
+    }
+  },
+  isGoogleUser: {
+    type: Boolean,
+    default: false
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows multiple null values (for non-Google users)
+  },
+  avatar: {
+    type: String // For storing profile picture URL
   },
   location: {
     type: {
@@ -32,13 +46,16 @@ const UserSchema = new mongoose.Schema({
         },
         message: 'Coordinates should be an array of two numbers [longitude, latitude]'
       },
-      default: [0, 0] // [longitude, latitude] default to origin if not provided
+      default: [0, 0]
     }
   }
 }, { timestamps: true });
 
 // Enable geospatial indexing
 UserSchema.index({ location: '2dsphere' });
+
+// Index for googleId to ensure query efficiency
+UserSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 const User = mongoose.model('User', UserSchema);
 export default User;

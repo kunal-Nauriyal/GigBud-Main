@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './LoginSignup.css';
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from '@react-oauth/google';
 
 function LoginModal({ isOpen, onClose }) {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -35,30 +37,55 @@ function LoginModal({ isOpen, onClose }) {
   const toggleForm = (e) => {
     e.preventDefault();
     setIsLoginForm(!isLoginForm);
+    // Clear form data when switching
+    setFormData({
+      loginEmail: '',
+      loginPassword: '',
+      signupName: '',
+      signupEmail: '',
+      signupPassword: '',
+      signupConfirmPassword: ''
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     if (isLoginForm) {
       try {
         const res = await fetch("http://localhost:3000/api/auth/login", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: 'include',
           body: JSON.stringify({
             email: formData.loginEmail,
             password: formData.loginPassword,
           }),
         });
 
-        const data = await res.json();
-
         if (!res.ok) {
-          alert(data.message || "Login failed.");
+          const errorText = await res.text();
+          let errorMessage = "Login failed";
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            console.error("Server returned HTML instead of JSON:", errorText);
+            errorMessage = "Server error - please check if the backend is running";
+          }
+          
+          alert(errorMessage);
           return;
         }
 
-        const accessToken = data?.data?.accessToken;
+        const data = await res.json();
+        const accessToken = data?.data?.accessToken || data?.token;
+        
         if (!accessToken) {
           alert("Missing access token in response");
           return;
@@ -70,19 +97,32 @@ function LoginModal({ isOpen, onClose }) {
         navigate("/task-receiver-dashboard");
       } catch (err) {
         console.error("Login error:", err);
-        alert("Login error");
+        alert("Login error: " + (err.message || "Network error"));
+      } finally {
+        setLoading(false);
       }
     } else {
       // Signup logic
       if (formData.signupPassword !== formData.signupConfirmPassword) {
         alert("Passwords don't match!");
+        setLoading(false);
+        return;
+      }
+
+      if (formData.signupPassword.length < 6) {
+        alert("Password must be at least 6 characters long!");
+        setLoading(false);
         return;
       }
 
       try {
         const res = await fetch("http://localhost:3000/api/auth/register", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: 'include',
           body: JSON.stringify({
             name: formData.signupName,
             email: formData.signupEmail,
@@ -90,27 +130,94 @@ function LoginModal({ isOpen, onClose }) {
           }),
         });
 
-        const data = await res.json();
-
-        if (res.ok) {
-          alert("Signup successful! Please log in.");
-          setIsLoginForm(true);
-          setFormData({
-            loginEmail: formData.signupEmail,
-            loginPassword: '',
-            signupName: '',
-            signupEmail: '',
-            signupPassword: '',
-            signupConfirmPassword: ''
-          });
-        } else {
-          alert(data.message || "Signup failed.");
+        if (!res.ok) {
+          const errorText = await res.text();
+          let errorMessage = "Signup failed";
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            console.error("Server returned HTML instead of JSON:", errorText);
+            errorMessage = "Server error - please check if the backend is running";
+          }
+          
+          alert(errorMessage);
+          return;
         }
+
+        const data = await res.json();
+        alert("Signup successful! Please log in.");
+        setIsLoginForm(true);
+        setFormData({
+          loginEmail: formData.signupEmail,
+          loginPassword: '',
+          signupName: '',
+          signupEmail: '',
+          signupPassword: '',
+          signupConfirmPassword: ''
+        });
       } catch (err) {
         console.error("Signup error:", err);
-        alert("Signup error");
+        alert("Signup error: " + (err.message || "Network error"));
+      } finally {
+        setLoading(false);
       }
     }
+  };
+
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3000/api/auth/google-login", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        credentials: 'include',
+        body: JSON.stringify({ token: credentialResponse.credential }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = "Google login failed";
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          console.error("Server returned HTML instead of JSON:", errorText);
+          errorMessage = "Server error - please check if the backend is running";
+        }
+        
+        alert(errorMessage);
+        return;
+      }
+
+      const data = await res.json();
+      const accessToken = data?.token || data?.data?.accessToken;
+      
+      if (!accessToken) {
+        alert("Missing access token from Google login");
+        return;
+      }
+
+      login(accessToken, true);
+      alert("Google login successful!");
+      onClose();
+      navigate("/task-receiver-dashboard");
+    } catch (error) {
+      console.error("Google login error:", error);
+      alert("Google login error: " + (error.message || "Network error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    console.error("Google login failed");
+    alert("Google login failed. Please try again or use email login.");
   };
 
   if (!isOpen) return null;
@@ -139,6 +246,7 @@ function LoginModal({ isOpen, onClose }) {
                     value={formData.loginEmail}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="input-group">
@@ -152,6 +260,7 @@ function LoginModal({ isOpen, onClose }) {
                     value={formData.loginPassword}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="checkbox-container">
@@ -160,10 +269,25 @@ function LoginModal({ isOpen, onClose }) {
                     id="remember-me"
                     checked={rememberMe}
                     onChange={() => setRememberMe(!rememberMe)}
+                    disabled={loading}
                   />
                   <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
                 </div>
-                <button type="submit" className="btn">Login</button>
+                <button type="submit" className="btn" disabled={loading}>
+                  {loading ? "Logging in..." : "Login"}
+                </button>
+
+                <div style={{ textAlign: "center", margin: "1rem 0" }}>or</div>
+
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleLoginSuccess}
+                    onError={handleGoogleLoginError}
+                    useOneTap={false}
+                    auto_select={false}
+                  />
+                </div>
+
                 <div className="switch-form">
                   <span>Don't have an account?</span>
                   <a href="#" onClick={toggleForm}>Sign up</a>
@@ -182,6 +306,7 @@ function LoginModal({ isOpen, onClose }) {
                     value={formData.signupName}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="input-group">
@@ -195,6 +320,7 @@ function LoginModal({ isOpen, onClose }) {
                     value={formData.signupEmail}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
                 <div className="input-group">
@@ -204,10 +330,12 @@ function LoginModal({ isOpen, onClose }) {
                     id="signup-password"
                     name="signupPassword"
                     className="input-field"
-                    placeholder="Enter your password"
+                    placeholder="Enter your password (min 6 characters)"
                     value={formData.signupPassword}
                     onChange={handleChange}
                     required
+                    minLength={6}
+                    disabled={loading}
                   />
                 </div>
                 <div className="input-group">
@@ -221,9 +349,12 @@ function LoginModal({ isOpen, onClose }) {
                     value={formData.signupConfirmPassword}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                   />
                 </div>
-                <button type="submit" className="btn">Sign Up</button>
+                <button type="submit" className="btn" disabled={loading}>
+                  {loading ? "Signing up..." : "Sign Up"}
+                </button>
                 <div className="switch-form">
                   <span>Already have an account?</span>
                   <a href="#" onClick={toggleForm}>Login</a>
