@@ -56,7 +56,6 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      // Changed to use /api/users route instead of /api/auth
       const res = await axios.post("http://localhost:3000/api/users/login/request", {
         email: formData.loginEmail
       });
@@ -82,7 +81,6 @@ function LoginModal({ isOpen, onClose }) {
     setLoading(true);
     
     try {
-      // Changed to use /api/users route instead of /api/auth
       const res = await axios.post("http://localhost:3000/api/users/login/verify", {
         email: otpEmail,
         otp: otp
@@ -122,6 +120,7 @@ function LoginModal({ isOpen, onClose }) {
         return;
       }
 
+      // This part is kept for form submission handling but the button is hidden
       try {
         const res = await fetch("http://localhost:3000/api/auth/login", {
           method: "POST",
@@ -264,6 +263,17 @@ function LoginModal({ isOpen, onClose }) {
       }
 
       const data = await res.json();
+      
+      // Check if OTP was sent (new flow)
+      if (data.success && data.email) {
+        setOtpEmail(data.email);
+        setOtpSent(true);
+        setShowOtpForm(true);
+        alert(`OTP sent to ${data.email}! Please check your email and enter the verification code.`);
+        return;
+      }
+
+      // Fallback for old flow
       const accessToken = data?.token || data?.data?.accessToken;
       
       if (!accessToken) {
@@ -275,6 +285,7 @@ function LoginModal({ isOpen, onClose }) {
       alert("Google login successful!");
       onClose();
       navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
+      
     } catch (error) {
       console.error("Google login error:", error);
       alert("Google login error: " + (error.message || "Network error"));
@@ -373,13 +384,10 @@ function LoginModal({ isOpen, onClose }) {
                     />
                     <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
                   </div>
-                  <button type="submit" className="btn" disabled={loading}>
-                    {loading ? "Checking..." : "Login"}
-                  </button>
-
+                  
                   <button 
                     type="button" 
-                    className="btn secondary" 
+                    className="btn" 
                     onClick={handleSendOtp}
                     disabled={loading || !formData.loginEmail}
                   >
