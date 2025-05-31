@@ -8,7 +8,7 @@ function LoginModal({ isOpen, onClose }) {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, userRole } = useAuth(); // Added userRole
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,7 +37,6 @@ function LoginModal({ isOpen, onClose }) {
   const toggleForm = (e) => {
     e.preventDefault();
     setIsLoginForm(!isLoginForm);
-    // Clear form data when switching
     setFormData({
       loginEmail: '',
       loginPassword: '',
@@ -91,10 +90,11 @@ function LoginModal({ isOpen, onClose }) {
           return;
         }
 
-        login(accessToken, rememberMe);
+        await login(accessToken, rememberMe);
         alert("Login successful!");
         onClose();
-        navigate("/task-receiver-dashboard");
+        // Navigate based on userRole
+        navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
       } catch (err) {
         console.error("Login error:", err);
         alert("Login error: " + (err.message || "Network error"));
@@ -203,10 +203,11 @@ function LoginModal({ isOpen, onClose }) {
         return;
       }
 
-      login(accessToken, true);
+      await login(accessToken, true);
       alert("Google login successful!");
       onClose();
-      navigate("/task-receiver-dashboard");
+      // Navigate based on userRole
+      navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
     } catch (error) {
       console.error("Google login error:", error);
       alert("Google login error: " + (error.message || "Network error"));
@@ -274,7 +275,7 @@ function LoginModal({ isOpen, onClose }) {
                   <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
                 </div>
                 <button type="submit" className="btn" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? "Checking..." : "Login"}
                 </button>
 
                 <div style={{ textAlign: "center", margin: "1rem 0" }}>or</div>

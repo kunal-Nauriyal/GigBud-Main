@@ -30,6 +30,27 @@ const UserSchema = new mongoose.Schema({
   avatar: {
     type: String // For storing profile picture URL
   },
+  age: {
+    type: Number,
+    min: 1,
+    max: 120
+  },
+  profession: {
+    type: String,
+    trim: true
+  },
+  phone: {
+    type: String,
+    trim: true
+  },
+  phoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
   location: {
     type: {
       type: String,

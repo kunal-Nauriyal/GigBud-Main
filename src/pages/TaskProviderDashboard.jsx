@@ -6,13 +6,17 @@ import { taskAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+
+const DEFAULT_PROFILE_IMAGE = 'https://img.freepik.com/premium-vector/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-vector-illustration_561158-3383.jpg?w=360';
 
 const TaskProviderDashboard = () => {
   const navigate = useNavigate();
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, initialCheckDone } = useAuth();
   const [activeTab, setActiveTab] = useState('posted');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,54 +25,18 @@ const TaskProviderDashboard = () => {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantProfileModal, setShowApplicantProfileModal] = useState(false);
   const [showTaskFormModal, setShowTaskFormModal] = useState(false);
-  const [providerProfile, setProviderProfile] = useState({
-    image: user?.avatar || 'https://randomuser.me/api/portraits/men/45.jpg',
-    name: user?.name || '',
-    age: '',
-    profession: '',
-    phone: '',
-    email: user?.email || '',
-    phoneVerified: false,
-    emailVerified: false,
-  });
+  const [providerProfile, setProviderProfile] = useState(null);
   const [editProviderMode, setEditProviderMode] = useState(false);
-  const [editableProviderProfile, setEditableProviderProfile] = useState({
-    image: user?.avatar || 'https://randomuser.me/api/portraits/men/45.jpg',
-    name: user?.name || '',
-    age: '',
-    profession: '',
-    phone: '',
-    email: user?.email || '',
-    phoneVerified: false,
-    emailVerified: false,
-  });
+  const [editableProviderProfile, setEditableProviderProfile] = useState(null);
   const [taskCreated, setTaskCreated] = useState(false);
   const [viewingProfile, setViewingProfile] = useState(null);
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      toast.error('Please login to continue');
-      navigate('/');
-      return;
-    }
-
-    if (user) {
-      setProviderProfile(prev => ({
-        ...prev,
-        image: user.avatar || prev.image,
-        name: user.name || '',
-        email: user.email || ''
-      }));
-      setEditableProviderProfile(prev => ({
-        ...prev,
-        image: user.avatar || prev.image,
-        name: user.name || '',
-        email: user.email || ''
-      }));
-    }
-
-    fetchTasks();
-  }, [isLoggedIn, navigate, activeTab, taskCreated, user]);
+  const [otpModal, setOtpModal] = useState({
+    open: false,
+    type: '',
+    otp: '',
+    verifying: false,
+    error: null
+  });
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -83,12 +51,39 @@ const TaskProviderDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    if (!initialCheckDone) return;
+
+    if (!isLoggedIn) {
+      toast.error('Please login to continue');
+      navigate('/');
+      return;
+    }
+
+    if (user) {
+      const initialProfile = {
+        image: user.avatar || DEFAULT_PROFILE_IMAGE,
+        name: user.name || 'Unnamed User',
+        email: user.email || 'email@example.com',
+        phone: user.phone || '',
+        phoneVerified: Boolean(user.phoneVerified || false),
+        emailVerified: Boolean(user.emailVerified || false),
+        age: user.age || '',
+        profession: user.profession || '',
+      };
+      setProviderProfile(initialProfile);
+      setEditableProviderProfile(initialProfile);
+    }
+
+    fetchTasks();
+    fetchUserProfile();
+  }, [isLoggedIn, navigate, activeTab, taskCreated, user, initialCheckDone]);
+
   const fetchTasks = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await taskAPI.getProviderTasks();
-
       if (response.success) {
         let filteredTasks = response.data || [];
         switch (activeTab) {
@@ -112,12 +107,136 @@ const TaskProviderDashboard = () => {
       const errorMsg = err.response?.data?.message || err.message || 'Failed to fetch tasks';
       setError(errorMsg);
       toast.error(errorMsg);
-      
       if (err.response?.status === 401) {
         navigate('/');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
+      }
+      const res = await axios.get('/api/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!res.data || !res.data.success) {
+        throw new Error('Invalid API response structure');
+      }
+
+      const apiUser = res.data.data;
+      if (!apiUser) {
+        throw new Error('User data not found in response');
+      }
+
+      const profileData = {
+        image: user?.avatar || apiUser.avatar || DEFAULT_PROFILE_IMAGE,
+        name: user?.name || apiUser.name || 'Unnamed User',
+        email: user?.email || apiUser.email || 'email@example.com',
+        phone: apiUser.phone || user?.phone || '',
+        phoneVerified: Boolean(apiUser.phoneVerified || user?.phoneVerified || false),
+        emailVerified: Boolean(apiUser.emailVerified || user?.emailVerified || false),
+        age: apiUser.age || user?.age || '',
+        profession: apiUser.profession || user?.profession || '',
+      };
+
+      setProviderProfile(profileData);
+      setEditableProviderProfile(profileData);
+    } catch (err) {
+      console.error('Failed to load user profile:', err);
+      
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/');
+        return;
+      }
+      
+      if (user) {
+        const fallbackProfile = {
+          image: user.avatar || DEFAULT_PROFILE_IMAGE,
+          name: user.name || 'Unnamed User',
+          email: user.email || 'email@example.com',
+          phone: user.phone || 'Not available',
+          phoneVerified: Boolean(user.phoneVerified || false),
+          emailVerified: Boolean(user.emailVerified || false),
+          age: user.age || 'Not specified',
+          profession: user.profession || 'Not specified',
+        };
+        setProviderProfile(fallbackProfile);
+        setEditableProviderProfile(fallbackProfile);
+      } else {
+        const defaultProfile = {
+          image: DEFAULT_PROFILE_IMAGE,
+          name: 'Unnamed User',
+          email: 'email@example.com',
+          phone: 'Not available',
+          phoneVerified: false,
+          emailVerified: false,
+          age: 'Not specified',
+          profession: 'Not specified',
+        };
+        setProviderProfile(defaultProfile);
+        setEditableProviderProfile(defaultProfile);
+      }
+      
+      toast.error('Failed to load profile from API.');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleVerifyClick = (type) => {
+    if ((type === 'email' && providerProfile.emailVerified) || 
+        (type === 'phone' && providerProfile.phoneVerified)) {
+      return;
+    }
+    setOtpModal({
+      open: true,
+      type,
+      otp: '',
+      verifying: false,
+      error: null
+    });
+  };
+
+  const handleOtpChange = (e) => {
+    setOtpModal(prev => ({ ...prev, otp: e.target.value }));
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      setOtpModal(prev => ({ ...prev, verifying: true, error: null }));
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      
+      const response = await axios.post(`/api/verify-${otpModal.type}-otp`, {
+        otp: otpModal.otp
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        toast.success(`${otpModal.type === 'email' ? 'Email' : 'Phone'} verified successfully!`);
+        fetchUserProfile();
+        setOtpModal({ open: false, type: '', otp: '', verifying: false, error: null });
+      } else {
+        throw new Error(response.data.message || 'Verification failed');
+      }
+    } catch (err) {
+      setOtpModal(prev => ({
+        ...prev,
+        verifying: false,
+        error: err.response?.data?.message || err.message || 'Verification failed'
+      }));
     }
   };
 
@@ -233,6 +352,67 @@ const TaskProviderDashboard = () => {
     return location;
   };
 
+  const handleEditProviderProfile = () => {
+    setEditProviderMode(true);
+    setEditableProviderProfile({...providerProfile});
+  };
+
+  const handleProviderProfileInputChange = (e) => {
+    setEditableProviderProfile({ 
+      ...editableProviderProfile, 
+      [e.target.name]: e.target.value 
+    });
+  };
+
+  const handleSaveProviderProfile = async () => {
+    try {
+      if (!editableProviderProfile?.name || !editableProviderProfile?.email) {
+        toast.error('Name and email are required fields');
+        return;
+      }
+
+      const updated = {
+        name: editableProviderProfile.name,
+        email: editableProviderProfile.email,
+        avatar: editableProviderProfile.image,
+        age: editableProviderProfile.age || '',
+        profession: editableProviderProfile.profession || '',
+        phone: editableProviderProfile.phone || '',
+      };
+
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      const response = await axios.put('/api/me', updated, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data && response.data.success) {
+        setProviderProfile(editableProviderProfile);
+        setEditProviderMode(false);
+        toast.success('Profile updated successfully');
+        fetchUserProfile();
+      } else {
+        throw new Error(response.data?.message || 'Update failed');
+      }
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/');
+      } else if (err.response?.status === 400) {
+        toast.error(err.response.data?.message || 'Invalid data provided');
+      } else {
+        toast.error(err.response?.data?.message || err.message || 'Update failed');
+      }
+    }
+  };
+
+  const handleCancelProviderEdit = () => {
+    setEditProviderMode(false);
+  };
+
   const renderCreateTask = () => (
     <>
       {showTaskFormModal && (
@@ -337,99 +517,139 @@ const TaskProviderDashboard = () => {
   const renderProfile = () => (
     <div className="panel-content">
       <h2>Profile</h2>
-      <div className="profile-modal-content">
-        <div className="profile-image-row">
-          <img 
-            src={editProviderMode ? editableProviderProfile.image : providerProfile.image} 
-            alt="Profile" 
-            className="profile-image" 
-          />
-          {editProviderMode && (
-            <input 
-              type="text" 
-              name="image" 
-              value={editableProviderProfile.image} 
-              onChange={handleProviderProfileInputChange} 
-              placeholder="Image URL" 
-              className="profile-image-input" 
+      {profileLoading || !initialCheckDone ? (
+        <div className="loading-spinner">Loading profile...</div>
+      ) : providerProfile ? (
+        <div className="profile-modal-content">
+          <div className="profile-image-row">
+            <img 
+              src={editProviderMode ? editableProviderProfile.image : providerProfile.image} 
+              alt="Profile" 
+              className="profile-image" 
+              onError={(e) => {
+                e.target.src = DEFAULT_PROFILE_IMAGE;
+              }}
             />
-          )}
+            {editProviderMode && (
+              <div className="profile-image-edit">
+                <input 
+                  type="text" 
+                  name="image" 
+                  value={editableProviderProfile.image} 
+                  onChange={handleProviderProfileInputChange} 
+                  placeholder="Image URL" 
+                  className="profile-image-input" 
+                />
+                <button 
+                  className="small-button"
+                  onClick={() => setEditableProviderProfile({
+                    ...editableProviderProfile,
+                    image: DEFAULT_PROFILE_IMAGE
+                  })}
+                >
+                  Use Default
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="profile-fields">
+            <div className="profile-field">
+              <label>Name:</label>
+              {editProviderMode ? (
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={editableProviderProfile.name} 
+                  onChange={handleProviderProfileInputChange} 
+                  required
+                />
+              ) : (
+                <span>{providerProfile.name}</span>
+              )}
+            </div>
+            <div className="profile-field">
+              <label>Email:</label>
+              {editProviderMode ? (
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={editableProviderProfile.email} 
+                  onChange={handleProviderProfileInputChange} 
+                  required
+                />
+              ) : (
+                <span>{providerProfile.email}</span>
+              )}
+              <span 
+                className={`verify-badge ${providerProfile.emailVerified ? 'verified' : 'not-verified'}`}
+                onClick={() => handleVerifyClick('email')}
+                style={{ cursor: providerProfile.emailVerified ? 'default' : 'pointer' }}
+              >
+                {providerProfile.emailVerified ? '✔ Verified' : 'Click to Verify'}
+              </span>
+            </div>
+            <div className="profile-field">
+              <label>Age:</label>
+              {editProviderMode ? (
+                <input 
+                  type="number" 
+                  name="age" 
+                  value={editableProviderProfile.age} 
+                  onChange={handleProviderProfileInputChange} 
+                  min="0"
+                />
+              ) : (
+                <span>{providerProfile.age || 'Not specified'}</span>
+              )}
+            </div>
+            <div className="profile-field">
+              <label>Profession:</label>
+              {editProviderMode ? (
+                <input 
+                  type="text" 
+                  name="profession" 
+                  value={editableProviderProfile.profession} 
+                  onChange={handleProviderProfileInputChange} 
+                />
+              ) : (
+                <span>{providerProfile.profession || 'Not specified'}</span>
+              )}
+            </div>
+            <div className="profile-field">
+              <label>Phone:</label>
+              {editProviderMode ? (
+                <input 
+                  type="tel" 
+                  name="phone" 
+                  value={editableProviderProfile.phone} 
+                  onChange={handleProviderProfileInputChange} 
+                />
+              ) : (
+                <span>{providerProfile.phone || 'Not provided'}</span>
+              )}
+              <span 
+                className={`verify-badge ${providerProfile.phoneVerified ? 'verified' : 'not-verified'}`}
+                onClick={() => handleVerifyClick('phone')}
+                style={{ cursor: providerProfile.phoneVerified ? 'default' : 'pointer' }}
+              >
+                {providerProfile.phoneVerified ? '✔ Verified' : 'Click to Verify'}
+              </span>
+            </div>
+          </div>
+          <div className="profile-modal-actions">
+            {editProviderMode ? (
+              <>
+                <button className="primary-button" onClick={handleSaveProviderProfile}>Save</button>
+                <button className="secondary-button" onClick={handleCancelProviderEdit}>Cancel</button>
+              </>
+            ) : (
+              <button className="primary-button" onClick={handleEditProviderProfile}>Edit</button>
+            )}
+          </div>
         </div>
-        <div className="profile-fields">
-          <div className="profile-field">
-            <label>Name:</label>
-            {editProviderMode ? (
-              <input 
-                type="text" 
-                name="name" 
-                value={editableProviderProfile.name} 
-                onChange={handleProviderProfileInputChange} 
-              />
-            ) : (
-              <span>{providerProfile.name || 'Not specified'}</span>
-            )}
-          </div>
-          <div className="profile-field">
-            <label>Email:</label>
-            <span>{providerProfile.email || 'Not specified'}</span>
-            <span className={`verify-badge ${providerProfile.emailVerified ? 'verified' : 'not-verified'}`}>
-              {providerProfile.emailVerified ? '✔ Verified' : 'Not Verified'}
-            </span>
-          </div>
-          <div className="profile-field">
-            <label>Age:</label>
-            {editProviderMode ? (
-              <input 
-                type="number" 
-                name="age" 
-                value={editableProviderProfile.age} 
-                onChange={handleProviderProfileInputChange} 
-              />
-            ) : (
-              <span>{providerProfile.age || 'Not specified'}</span>
-            )}
-          </div>
-          <div className="profile-field">
-            <label>Profession:</label>
-            {editProviderMode ? (
-              <input 
-                type="text" 
-                name="profession" 
-                value={editableProviderProfile.profession} 
-                onChange={handleProviderProfileInputChange} 
-              />
-            ) : (
-              <span>{providerProfile.profession || 'Not specified'}</span>
-            )}
-          </div>
-          <div className="profile-field">
-            <label>Phone:</label>
-            {editProviderMode ? (
-              <input 
-                type="text" 
-                name="phone" 
-                value={editableProviderProfile.phone} 
-                onChange={handleProviderProfileInputChange} 
-              />
-            ) : (
-              <span>{providerProfile.phone || 'Not specified'}</span>
-            )}
-            <span className={`verify-badge ${providerProfile.phoneVerified ? 'verified' : 'not-verified'}`}>
-              {providerProfile.phoneVerified ? '✔ Verified' : 'Not Verified'}
-            </span>
-          </div>
-        </div>
-        <div className="profile-modal-actions">
-          {editProviderMode ? (
-            <>
-              <button className="primary-button" onClick={handleSaveProviderProfile}>Save</button>
-              <button className="secondary-button" onClick={handleCancelProviderEdit}>Cancel</button>
-            </>
-          ) : (
-            <button className="primary-button" onClick={handleEditProviderProfile}>Edit</button>
-          )}
-        </div>
-      </div>
+      ) : (
+        <p>Failed to load profile</p>
+      )}
     </div>
   );
 
@@ -450,46 +670,9 @@ const TaskProviderDashboard = () => {
     }
   };
 
-  const [editMode, setEditMode] = useState(false);
-  const [editableProfile, setEditableProfile] = useState(null);
-
-  const handleEditProfile = () => {
-    setEditMode(true);
-    setEditableProfile(getApplicantProfile(selectedApplicant));
-  };
-
-  const handleProfileInputChange = (e) => {
-    setEditableProfile({ ...editableProfile, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveProfile = () => {
-    setEditMode(false);
-    setSelectedApplicant(editableProfile);
-  };
-
-  const handleCancelEdit = () => {
-    setEditMode(false);
-    setEditableProfile(null);
-  };
-
-  const handleEditProviderProfile = () => {
-    setEditProviderMode(true);
-    setEditableProviderProfile(providerProfile);
-  };
-
-  const handleProviderProfileInputChange = (e) => {
-    setEditableProviderProfile({ ...editableProviderProfile, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveProviderProfile = () => {
-    setProviderProfile(editableProviderProfile);
-    setEditProviderMode(false);
-  };
-
-  const handleCancelProviderEdit = () => {
-    setEditProviderMode(false);
-    setEditableProviderProfile(providerProfile);
-  };
+  if (!initialCheckDone) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="dashboard-container">
@@ -616,37 +799,83 @@ const TaskProviderDashboard = () => {
                 </div>
               </div>
 
-              {selectedTask.status === 'pending' && getApplicantsForTask(selectedTask._id).length > 0 && (
+              {getApplicantsForTask(selectedTask._id).length > 0 && (
                 <div className="detail-section">
-                  <h3>Applicants</h3>
+                  <h3>{selectedTask.status === 'completed' ? 'Completed By' : 'Applicants'}</h3>
                   <div className="applicants-list">
-                    {getApplicantsForTask(selectedTask._id).map(applicant => (
-                      <div key={applicant._id} className="applicant-card">
-                        <h4>{applicant.user?.name || 'Unnamed User'}</h4>
-                        <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
-                        <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
-                        <div className="applicant-actions">
-                          <button
-                            className="secondary-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewProfile(applicant);
-                            }}
-                          >
-                            View Profile
-                          </button>
-                          <button
-                            className="primary-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAssignTask(selectedTask._id, applicant.user._id);
-                            }}
-                          >
-                            Assign To
-                          </button>
+                    {selectedTask.status === 'completed' ? (
+                      <div className="applicant-card">
+                        <img 
+                          src={selectedTask.completedBy?.profilePictureUrl || selectedTask.assignedTo?.profilePictureUrl || DEFAULT_PROFILE_IMAGE}
+                          alt="Completed by"
+                          className="applicant-image"
+                          onError={(e) => {
+                            e.target.src = DEFAULT_PROFILE_IMAGE;
+                          }}
+                        />
+                        <div className="applicant-info">
+                          <h4>{selectedTask.completedBy?.name || selectedTask.assignedTo?.name || 'Unnamed User'}</h4>
+                          <p>Email: {selectedTask.completedBy?.email || selectedTask.assignedTo?.email || 'Not available'}</p>
+                          <p>Phone: {selectedTask.completedBy?.phone || selectedTask.assignedTo?.phone || 'Not available'}</p>
+                          <span className="status-badge completed">Completed</span>
                         </div>
                       </div>
-                    ))}
+                    ) : selectedTask.status === 'accepted' && selectedTask.assignedTo ? (
+                      <div className="applicant-card">
+                        <img 
+                          src={selectedTask.assignedTo.profilePictureUrl || DEFAULT_PROFILE_IMAGE}
+                          alt="Assigned applicant"
+                          className="applicant-image"
+                          onError={(e) => {
+                            e.target.src = DEFAULT_PROFILE_IMAGE;
+                          }}
+                        />
+                        <div className="applicant-info">
+                          <h4>{selectedTask.assignedTo.name || 'Unnamed User'}</h4>
+                          <p>Email: {selectedTask.assignedTo.email || 'Not available'}</p>
+                          <p>Phone: {selectedTask.assignedTo.phone || 'Not available'}</p>
+                          <span className="status-badge assigned">Assigned</span>
+                        </div>
+                      </div>
+                    ) : (
+                      getApplicantsForTask(selectedTask._id).map(applicant => (
+                        <div key={applicant._id} className="applicant-card">
+                          <img 
+                            src={applicant.user?.profilePictureUrl || DEFAULT_PROFILE_IMAGE}
+                            alt="Applicant's profile picture"
+                            className="applicant-image"
+                            onError={(e) => {
+                              e.target.src = DEFAULT_PROFILE_IMAGE;
+                            }}
+                          />
+                          <div className="applicant-info">
+                            <h4>{applicant.user?.name || 'Unnamed User'}</h4>
+                            <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                            <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
+                          </div>
+                          <div className="applicant-actions">
+                            <button
+                              className="secondary-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProfile(applicant);
+                              }}
+                            >
+                              View Profile
+                            </button>
+                            <button
+                              className="primary-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAssignTask(selectedTask._id, applicant.user._id);
+                              }}
+                            >
+                              Assign To
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -661,9 +890,14 @@ const TaskProviderDashboard = () => {
             <button className="modal-close" onClick={() => setViewingProfile(null)}>×</button>
             <h2>{viewingProfile.user?.name || 'Applicant Profile'}</h2>
             <div className="profile-details">
-              {viewingProfile.user?.image && (
-                <img src={viewingProfile.user.image} alt="Profile" className="profile-image" />
-              )}
+              <img 
+                src={viewingProfile.user?.profilePictureUrl || DEFAULT_PROFILE_IMAGE}
+                alt="Profile" 
+                className="profile-image" 
+                onError={(e) => {
+                  e.target.src = DEFAULT_PROFILE_IMAGE;
+                }}
+              />
               <div className="profile-field">
                 <label>Email:</label>
                 <span>{viewingProfile.user?.email || 'Not available'}</span>
@@ -688,6 +922,40 @@ const TaskProviderDashboard = () => {
                   <span>{Array.isArray(viewingProfile.user.skills) ? viewingProfile.user.skills.join(", ") : viewingProfile.user.skills}</span>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {otpModal.open && (
+        <div className="modal-overlay">
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setOtpModal({ open: false })}>×</button>
+            <h2>Verify {otpModal.type}</h2>
+            <p>Enter the OTP sent to your {otpModal.type}</p>
+            <input
+              type="text"
+              value={otpModal.otp}
+              onChange={handleOtpChange}
+              placeholder="Enter OTP"
+              className="otp-input"
+            />
+            {otpModal.error && <div className="error-message">{otpModal.error}</div>}
+            <div className="modal-actions">
+              <button 
+                className="primary-button" 
+                onClick={handleVerifyOtp}
+                disabled={otpModal.verifying || !otpModal.otp}
+              >
+                {otpModal.verifying ? 'Verifying...' : 'Verify'}
+              </button>
+              <button 
+                className="secondary-button" 
+                onClick={() => setOtpModal({ open: false })}
+                disabled={otpModal.verifying}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

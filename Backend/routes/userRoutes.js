@@ -37,7 +37,12 @@ router.get('/me', authMiddleware, async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        avatar: user.avatar, // ✅ added
+        avatar: user.avatar,
+        age: user.age,
+        profession: user.profession,
+        phone: user.phone,
+        phoneVerified: user.phoneVerified || false,
+        emailVerified: user.emailVerified || false,
         role: user.role || 'user',
         location: user.location,
         createdAt: user.createdAt,
@@ -65,11 +70,15 @@ router.put('/me', authMiddleware, async (req, res) => {
       });
     }
 
-    const { name, email, avatar } = req.body;
+    const { name, email, avatar, age, profession, phone } = req.body;
 
+    // Allow updating all profile fields
     if (name) user.name = name;
     if (email) user.email = email;
     if (avatar) user.avatar = avatar;
+    if (age !== undefined) user.age = age;
+    if (profession !== undefined) user.profession = profession;
+    if (phone !== undefined) user.phone = phone;
 
     await user.save();
 
@@ -81,6 +90,11 @@ router.put('/me', authMiddleware, async (req, res) => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        age: user.age,
+        profession: user.profession,
+        phone: user.phone,
+        phoneVerified: user.phoneVerified,
+        emailVerified: user.emailVerified,
         updatedAt: user.updatedAt
       }
     });
@@ -90,6 +104,47 @@ router.put('/me', authMiddleware, async (req, res) => {
       success: false,
       message: 'Failed to update profile'
     });
+  }
+});
+
+// Simple verification endpoints
+router.post('/verify-email', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    user.emailVerified = true;
+    await user.save();
+    
+    res.json({ 
+      success: true,
+      message: 'Email verified successfully'
+    });
+  } catch (err) {
+    console.error('Email verification error:', err);
+    res.status(500).json({ success: false, message: 'Failed to verify email' });
+  }
+});
+
+router.post('/verify-phone', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    user.phoneVerified = true;
+    await user.save();
+    
+    res.json({ 
+      success: true,
+      message: 'Phone verified successfully'
+    });
+  } catch (err) {
+    console.error('Phone verification error:', err);
+    res.status(500).json({ success: false, message: 'Failed to verify phone' });
   }
 });
 
