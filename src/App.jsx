@@ -11,6 +11,7 @@ import TaskReceiverDashboard from "./pages/TaskReceiverDashboard";
 import TaskForm from "./pages/Taskform";
 import BuyingTimeForm from "./pages/BuyingTimeForm";
 import LoginModal from "./pages/Login";
+import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
@@ -62,6 +63,10 @@ function App() {
             <Route 
               path="/buying-time-form" 
               element={isLoggedIn ? <BuyingTimeForm /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/profile" 
+              element={isLoggedIn ? <Profile /> : <Navigate to="/" />} 
             />
           </Routes>
         </main>

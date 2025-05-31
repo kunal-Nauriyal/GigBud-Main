@@ -7,21 +7,9 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Provider profile mock data
-const initialProviderProfile = {
-  image: 'https://randomuser.me/api/portraits/men/45.jpg',
-  name: 'John Provider',
-  age: 32,
-  profession: 'Business Owner',
-  phone: '+91-9876543210',
-  email: 'john@example.com',
-  phoneVerified: true,
-  emailVerified: false,
-};
-
 const TaskProviderDashboard = () => {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const [activeTab, setActiveTab] = useState('posted');
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,11 +21,54 @@ const TaskProviderDashboard = () => {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [showApplicantProfileModal, setShowApplicantProfileModal] = useState(false);
   const [showTaskFormModal, setShowTaskFormModal] = useState(false);
-  const [providerProfile, setProviderProfile] = useState(initialProviderProfile);
+  const [providerProfile, setProviderProfile] = useState({
+    image: user?.avatar || 'https://randomuser.me/api/portraits/men/45.jpg',
+    name: user?.name || '',
+    age: '',
+    profession: '',
+    phone: '',
+    email: user?.email || '',
+    phoneVerified: false,
+    emailVerified: false,
+  });
   const [editProviderMode, setEditProviderMode] = useState(false);
-  const [editableProviderProfile, setEditableProviderProfile] = useState(initialProviderProfile);
+  const [editableProviderProfile, setEditableProviderProfile] = useState({
+    image: user?.avatar || 'https://randomuser.me/api/portraits/men/45.jpg',
+    name: user?.name || '',
+    age: '',
+    profession: '',
+    phone: '',
+    email: user?.email || '',
+    phoneVerified: false,
+    emailVerified: false,
+  });
   const [taskCreated, setTaskCreated] = useState(false);
   const [viewingProfile, setViewingProfile] = useState(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      toast.error('Please login to continue');
+      navigate('/');
+      return;
+    }
+
+    if (user) {
+      setProviderProfile(prev => ({
+        ...prev,
+        image: user.avatar || prev.image,
+        name: user.name || '',
+        email: user.email || ''
+      }));
+      setEditableProviderProfile(prev => ({
+        ...prev,
+        image: user.avatar || prev.image,
+        name: user.name || '',
+        email: user.email || ''
+      }));
+    }
+
+    fetchTasks();
+  }, [isLoggedIn, navigate, activeTab, taskCreated, user]);
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -51,16 +82,6 @@ const TaskProviderDashboard = () => {
         return status;
     }
   };
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      toast.error('Please login to continue');
-      navigate('/');
-      return;
-    }
-
-    fetchTasks();
-  }, [isLoggedIn, navigate, activeTab, taskCreated]);
 
   const fetchTasks = async () => {
     try {
@@ -318,53 +339,84 @@ const TaskProviderDashboard = () => {
       <h2>Profile</h2>
       <div className="profile-modal-content">
         <div className="profile-image-row">
-          <img src={editProviderMode ? editableProviderProfile.image : providerProfile.image} alt="Profile" className="profile-image" />
+          <img 
+            src={editProviderMode ? editableProviderProfile.image : providerProfile.image} 
+            alt="Profile" 
+            className="profile-image" 
+          />
           {editProviderMode && (
-            <input type="text" name="image" value={editableProviderProfile.image} onChange={handleProviderProfileInputChange} placeholder="Image URL" className="profile-image-input" />
+            <input 
+              type="text" 
+              name="image" 
+              value={editableProviderProfile.image} 
+              onChange={handleProviderProfileInputChange} 
+              placeholder="Image URL" 
+              className="profile-image-input" 
+            />
           )}
         </div>
         <div className="profile-fields">
           <div className="profile-field">
             <label>Name:</label>
             {editProviderMode ? (
-              <input type="text" name="name" value={editableProviderProfile.name} onChange={handleProviderProfileInputChange} />
+              <input 
+                type="text" 
+                name="name" 
+                value={editableProviderProfile.name} 
+                onChange={handleProviderProfileInputChange} 
+              />
             ) : (
-              <span>{providerProfile.name}</span>
+              <span>{providerProfile.name || 'Not specified'}</span>
             )}
+          </div>
+          <div className="profile-field">
+            <label>Email:</label>
+            <span>{providerProfile.email || 'Not specified'}</span>
+            <span className={`verify-badge ${providerProfile.emailVerified ? 'verified' : 'not-verified'}`}>
+              {providerProfile.emailVerified ? '✔ Verified' : 'Not Verified'}
+            </span>
           </div>
           <div className="profile-field">
             <label>Age:</label>
             {editProviderMode ? (
-              <input type="number" name="age" value={editableProviderProfile.age} onChange={handleProviderProfileInputChange} />
+              <input 
+                type="number" 
+                name="age" 
+                value={editableProviderProfile.age} 
+                onChange={handleProviderProfileInputChange} 
+              />
             ) : (
-              <span>{providerProfile.age}</span>
+              <span>{providerProfile.age || 'Not specified'}</span>
             )}
           </div>
           <div className="profile-field">
             <label>Profession:</label>
             {editProviderMode ? (
-              <input type="text" name="profession" value={editableProviderProfile.profession} onChange={handleProviderProfileInputChange} />
+              <input 
+                type="text" 
+                name="profession" 
+                value={editableProviderProfile.profession} 
+                onChange={handleProviderProfileInputChange} 
+              />
             ) : (
-              <span>{providerProfile.profession}</span>
+              <span>{providerProfile.profession || 'Not specified'}</span>
             )}
           </div>
           <div className="profile-field">
             <label>Phone:</label>
             {editProviderMode ? (
-              <input type="text" name="phone" value={editableProviderProfile.phone} onChange={handleProviderProfileInputChange} />
+              <input 
+                type="text" 
+                name="phone" 
+                value={editableProviderProfile.phone} 
+                onChange={handleProviderProfileInputChange} 
+              />
             ) : (
-              <span>{providerProfile.phone}</span>
+              <span>{providerProfile.phone || 'Not specified'}</span>
             )}
-            <span className={`verify-badge ${providerProfile.phoneVerified ? 'verified' : 'not-verified'}`}>{providerProfile.phoneVerified ? '✔ Verified' : 'Not Verified'}</span>
-          </div>
-          <div className="profile-field">
-            <label>Email:</label>
-            {editProviderMode ? (
-              <input type="email" name="email" value={editableProviderProfile.email} onChange={handleProviderProfileInputChange} />
-            ) : (
-              <span>{providerProfile.email}</span>
-            )}
-            <span className={`verify-badge ${providerProfile.emailVerified ? 'verified' : 'not-verified'}`}>{providerProfile.emailVerified ? '✔ Verified' : 'Not Verified'}</span>
+            <span className={`verify-badge ${providerProfile.phoneVerified ? 'verified' : 'not-verified'}`}>
+              {providerProfile.phoneVerified ? '✔ Verified' : 'Not Verified'}
+            </span>
           </div>
         </div>
         <div className="profile-modal-actions">
@@ -564,74 +616,37 @@ const TaskProviderDashboard = () => {
                 </div>
               </div>
 
-              {getApplicantsForTask(selectedTask._id).length > 0 && (
+              {selectedTask.status === 'pending' && getApplicantsForTask(selectedTask._id).length > 0 && (
                 <div className="detail-section">
-                  <h3>{selectedTask.status === 'completed' ? 'Completed By' : 'Applicants'}</h3>
+                  <h3>Applicants</h3>
                   <div className="applicants-list">
-                    {selectedTask.status === 'completed' ? (
-                      <div className="applicant-card">
-                        <img 
-                          src={selectedTask.completedBy?.profilePictureUrl || selectedTask.assignedTo?.profilePictureUrl || 'placeholder-image-url.jpg'}
-                          alt="Completed by"
-                          style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
-                        />
-                        <div className="applicant-info">
-                          <h4>{selectedTask.completedBy?.name || selectedTask.assignedTo?.name || 'Unnamed User'}</h4>
-                          <p>Email: {selectedTask.completedBy?.email || selectedTask.assignedTo?.email || 'Not available'}</p>
-                          <p>Phone: {selectedTask.completedBy?.phone || selectedTask.assignedTo?.phone || 'Not available'}</p>
-                          <span className="status-badge completed">Completed</span>
+                    {getApplicantsForTask(selectedTask._id).map(applicant => (
+                      <div key={applicant._id} className="applicant-card">
+                        <h4>{applicant.user?.name || 'Unnamed User'}</h4>
+                        <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                        <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
+                        <div className="applicant-actions">
+                          <button
+                            className="secondary-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProfile(applicant);
+                            }}
+                          >
+                            View Profile
+                          </button>
+                          <button
+                            className="primary-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAssignTask(selectedTask._id, applicant.user._id);
+                            }}
+                          >
+                            Assign To
+                          </button>
                         </div>
                       </div>
-                    ) : selectedTask.status === 'accepted' && selectedTask.assignedTo ? (
-                      <div className="applicant-card">
-                        <img 
-                          src={selectedTask.assignedTo.profilePictureUrl || 'placeholder-image-url.jpg'}
-                          alt="Assigned applicant"
-                          style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
-                        />
-                        <div className="applicant-info">
-                          <h4>{selectedTask.assignedTo.name || 'Unnamed User'}</h4>
-                          <p>Email: {selectedTask.assignedTo.email || 'Not available'}</p>
-                          <p>Phone: {selectedTask.assignedTo.phone || 'Not available'}</p>
-                          <span className="status-badge assigned">Assigned</span>
-                        </div>
-                      </div>
-                    ) : (
-                      getApplicantsForTask(selectedTask._id).map(applicant => (
-                        <div key={applicant._id} className="applicant-card">
-                          <img 
-                            src={applicant.user?.profilePictureUrl || 'placeholder-image-url.jpg'}
-                            alt="Applicant's profile picture"
-                            style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '1rem', objectFit: 'cover' }}
-                          />
-                          <div className="applicant-info">
-                            <h4>{applicant.user?.name || 'Unnamed User'}</h4>
-                            <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
-                            <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
-                          </div>
-                          <div className="applicant-actions">
-                            <button
-                              className="secondary-button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewProfile(applicant);
-                              }}
-                            >
-                              View Profile
-                            </button>
-                            <button
-                              className="primary-button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAssignTask(selectedTask._id, applicant.user._id);
-                              }}
-                            >
-                              Assign To
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    ))}
                   </div>
                 </div>
               )}
