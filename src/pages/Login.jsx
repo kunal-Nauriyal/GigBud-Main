@@ -3,13 +3,18 @@ import './LoginSignup.css';
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 
 function LoginModal({ isOpen, onClose }) {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, userRole } = useAuth(); // Added userRole
+  const { login, userRole } = useAuth();
   const navigate = useNavigate();
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,6 +42,7 @@ function LoginModal({ isOpen, onClose }) {
   const toggleForm = (e) => {
     e.preventDefault();
     setIsLoginForm(!isLoginForm);
+    setShowOtpForm(false);
     setFormData({
       loginEmail: '',
       loginPassword: '',
@@ -47,11 +53,76 @@ function LoginModal({ isOpen, onClose }) {
     });
   };
 
+  const handleSendOtp = async () => {
+    setLoading(true);
+    try {
+      // Try different endpoint variations
+      const res = await axios.post("http://localhost:3000/api/auth/send-otp", {
+        email: formData.loginEmail
+      });
+      
+      if (res.data.success) {
+        setOtpEmail(formData.loginEmail);
+        setOtpSent(true);
+        setShowOtpForm(true); // Show OTP form after sending
+        alert("OTP sent to your email!");
+      } else {
+        alert(res.data.message || "Failed to send OTP");
+      }
+    } catch (err) {
+      console.error("OTP send error:", err);
+      alert(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      // Try different endpoint variations
+      const res = await axios.post("http://localhost:3000/api/auth/verify-otp", {
+        email: otpEmail,
+        otp: otp
+      });
+
+      if (!res.data.success) {
+        alert(res.data.message || "OTP verification failed");
+        return;
+      }
+
+      const accessToken = res.data?.data?.accessToken || res.data?.token;
+      
+      if (!accessToken) {
+        alert("Missing access token in response");
+        return;
+      }
+
+      await login(accessToken, rememberMe);
+      alert("Login successful!");
+      onClose();
+      navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
+    } catch (err) {
+      console.error("OTP login error:", err);
+      alert(err.response?.data?.message || "OTP verification failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     if (isLoginForm) {
+      // If OTP form is shown, handle OTP submission
+      if (showOtpForm) {
+        await handleOtpLogin(e);
+        return;
+      }
+
       try {
         const res = await fetch("http://localhost:3000/api/auth/login", {
           method: "POST",
@@ -93,7 +164,6 @@ function LoginModal({ isOpen, onClose }) {
         await login(accessToken, rememberMe);
         alert("Login successful!");
         onClose();
-        // Navigate based on userRole
         navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
       } catch (err) {
         console.error("Login error:", err);
@@ -102,7 +172,7 @@ function LoginModal({ isOpen, onClose }) {
         setLoading(false);
       }
     } else {
-      // Signup logic
+      // Signup logic remains the same
       if (formData.signupPassword !== formData.signupConfirmPassword) {
         alert("Passwords don't match!");
         setLoading(false);
@@ -206,7 +276,6 @@ function LoginModal({ isOpen, onClose }) {
       await login(accessToken, true);
       alert("Google login successful!");
       onClose();
-      // Navigate based on userRole
       navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
     } catch (error) {
       console.error("Google login error:", error);
@@ -235,65 +304,107 @@ function LoginModal({ isOpen, onClose }) {
         <div className="form-container">
           <form onSubmit={handleSubmit} className="form">
             {isLoginForm ? (
-              <>
-                <div className="input-group">
-                  <label htmlFor="login-email">Email</label>
-                  <input
-                    type="email"
-                    id="login-email"
-                    name="loginEmail"
-                    className="input-field"
-                    placeholder="Enter your email"
-                    value={formData.loginEmail}
-                    onChange={handleChange}
-                    required
+              showOtpForm ? (
+                <>
+                  <div className="input-group">
+                    <label>Enter OTP sent to {otpEmail}</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="Enter 6-digit OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                      disabled={loading}
+                      maxLength={6}
+                    />
+                  </div>
+                  <button type="submit" className="btn" disabled={loading}>
+                    {loading ? "Verifying..." : "Verify OTP"}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn secondary" 
+                    onClick={() => {
+                      setShowOtpForm(false);
+                      setOtp('');
+                      setOtpSent(false);
+                    }}
                     disabled={loading}
-                  />
-                </div>
-                <div className="input-group">
-                  <label htmlFor="login-password">Password</label>
-                  <input
-                    type="password"
-                    id="login-password"
-                    name="loginPassword"
-                    className="input-field"
-                    placeholder="Enter your password"
-                    value={formData.loginPassword}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <div className="checkbox-container">
-                  <input
-                    type="checkbox"
-                    id="remember-me"
-                    checked={rememberMe}
-                    onChange={() => setRememberMe(!rememberMe)}
-                    disabled={loading}
-                  />
-                  <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
-                </div>
-                <button type="submit" className="btn" disabled={loading}>
-                  {loading ? "Checking..." : "Login"}
-                </button>
+                  >
+                    Back to Login
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="input-group">
+                    <label htmlFor="login-email">Email</label>
+                    <input
+                      type="email"
+                      id="login-email"
+                      name="loginEmail"
+                      className="input-field"
+                      placeholder="Enter your email"
+                      value={formData.loginEmail}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label htmlFor="login-password">Password</label>
+                    <input
+                      type="password"
+                      id="login-password"
+                      name="loginPassword"
+                      className="input-field"
+                      placeholder="Enter your password"
+                      value={formData.loginPassword}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="checkbox-container">
+                    <input
+                      type="checkbox"
+                      id="remember-me"
+                      checked={rememberMe}
+                      onChange={() => setRememberMe(!rememberMe)}
+                      disabled={loading}
+                    />
+                    <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
+                  </div>
+                  <button type="submit" className="btn" disabled={loading}>
+                    {loading ? "Checking..." : "Login"}
+                  </button>
 
-                <div style={{ textAlign: "center", margin: "1rem 0" }}>or</div>
+                  <button 
+                    type="button" 
+                    className="btn secondary" 
+                    onClick={handleSendOtp}
+                    disabled={loading || !formData.loginEmail}
+                  >
+                    {loading ? "Sending..." : "Login with OTP"}
+                  </button>
 
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleLoginSuccess}
-                    onError={handleGoogleLoginError}
-                    useOneTap={false}
-                    auto_select={false}
-                  />
-                </div>
+                  <div style={{ textAlign: "center", margin: "1rem 0" }}>or</div>
 
-                <div className="switch-form">
-                  <span>Don't have an account?</span>
-                  <a href="#" onClick={toggleForm}>Sign up</a>
-                </div>
-              </>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleLoginSuccess}
+                      onError={handleGoogleLoginError}
+                      useOneTap={false}
+                      auto_select={false}
+                    />
+                  </div>
+
+                  <div className="switch-form">
+                    <span>Don't have an account?</span>
+                    <a href="#" onClick={toggleForm}>Sign up</a>
+                  </div>
+                </>
+              )
             ) : (
               <>
                 <div className="input-group">
