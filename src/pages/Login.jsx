@@ -56,15 +56,15 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      // Try different endpoint variations
-      const res = await axios.post("http://localhost:3000/api/auth/send-otp", {
+      // Changed to use /api/users route instead of /api/auth
+      const res = await axios.post("http://localhost:3000/api/users/login/request", {
         email: formData.loginEmail
       });
       
       if (res.data.success) {
         setOtpEmail(formData.loginEmail);
         setOtpSent(true);
-        setShowOtpForm(true); // Show OTP form after sending
+        setShowOtpForm(true);
         alert("OTP sent to your email!");
       } else {
         alert(res.data.message || "Failed to send OTP");
@@ -82,8 +82,8 @@ function LoginModal({ isOpen, onClose }) {
     setLoading(true);
     
     try {
-      // Try different endpoint variations
-      const res = await axios.post("http://localhost:3000/api/auth/verify-otp", {
+      // Changed to use /api/users route instead of /api/auth
+      const res = await axios.post("http://localhost:3000/api/users/login/verify", {
         email: otpEmail,
         otp: otp
       });
@@ -117,7 +117,6 @@ function LoginModal({ isOpen, onClose }) {
     setLoading(true);
 
     if (isLoginForm) {
-      // If OTP form is shown, handle OTP submission
       if (showOtpForm) {
         await handleOtpLogin(e);
         return;
@@ -172,7 +171,6 @@ function LoginModal({ isOpen, onClose }) {
         setLoading(false);
       }
     } else {
-      // Signup logic remains the same
       if (formData.signupPassword !== formData.signupConfirmPassword) {
         alert("Passwords don't match!");
         setLoading(false);

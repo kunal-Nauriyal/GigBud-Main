@@ -77,28 +77,23 @@ export const register = async (req, res) => {
   }
 };
 
-// ✅ LOGIN - STEP 1
+// ✅ LOGIN - STEP 1 (OTP Request - Only email required)
 export const loginRequest = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      return res.status(400).json({ success: false, message: 'User not found with this email' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000);
     user.otp = otp.toString();
-    user.otpExpires = Date.now() + 5 * 60 * 1000;
+    user.otpExpires = Date.now() + 5 * 60 * 1000; // 5 min expiry
     await user.save();
 
     await sendOTPEmail(user.email, otp);
@@ -119,7 +114,7 @@ export const loginRequest = async (req, res) => {
   }
 };
 
-// ✅ LOGIN - STEP 2
+// ✅ LOGIN - STEP 2 (OTP Verification)
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;

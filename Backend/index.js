@@ -9,36 +9,44 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
-import reviewRoutes from './routes/reviewRoutes.js';
-import locationRoutes from './routes/locationRoutes.js';
-import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
 
-// CORS Middleware - Updated configuration
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+// CORS Middleware
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 
 // Other Middlewares
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/locations', locationRoutes);
-app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
   res.send('API is running...');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 // Start server
