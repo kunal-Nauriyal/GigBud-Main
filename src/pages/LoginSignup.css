@@ -215,12 +215,57 @@
 .social-login {
   margin-top: 30px;
   text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(138, 186, 211, 0.2);
 }
 
 .social-login p {
   color: #8ABAD3;
   font-size: 0.9rem;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.social-login p::before,
+.social-login p::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background-color: rgba(138, 186, 211, 0.2);
+}
+
+.social-login p::before {
+  left: 0;
+}
+
+.social-login p::after {
+  right: 0;
+}
+
+.google-login-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.google-login-container iframe {
+  width: 100% !important;
+  height: 50px !important;
+}
+
+.btn.secondary {
+  background-color: transparent;
+  border: 2px solid #00E676;
+  color: #00E676;
+  margin-top: 10px;
+}
+
+.btn.secondary:hover {
+  background-color: rgba(0, 230, 118, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 191, 0.4);
 }
 
 .social-icons {

@@ -360,54 +360,29 @@ function LoginModal({ isOpen, onClose }) {
                       disabled={loading}
                     />
                   </div>
-                  <div className="input-group">
-                    <label htmlFor="login-password">Password</label>
-                    <input
-                      type="password"
-                      id="login-password"
-                      name="loginPassword"
-                      className="input-field"
-                      placeholder="Enter your password"
-                      value={formData.loginPassword}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="checkbox-container">
-                    <input
-                      type="checkbox"
-                      id="remember-me"
-                      checked={rememberMe}
-                      onChange={() => setRememberMe(!rememberMe)}
-                      disabled={loading}
-                    />
-                    <label htmlFor="remember-me" className="checkbox-label">Remember me</label>
-                  </div>
-                  
                   <button 
                     type="button" 
                     className="btn" 
                     onClick={handleSendOtp}
                     disabled={loading || !formData.loginEmail}
                   >
-                    {loading ? "Sending..." : "Login with OTP"}
+                    {loading ? "Sending..." : "Generate OTP"}
                   </button>
-
-                  <div style={{ textAlign: "center", margin: "1rem 0" }}>or</div>
-
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <GoogleLogin
-                      onSuccess={handleGoogleLoginSuccess}
-                      onError={handleGoogleLoginError}
-                      useOneTap={false}
-                      auto_select={false}
-                    />
-                  </div>
-
-                  <div className="switch-form">
-                    <span>Don't have an account?</span>
-                    <a href="#" onClick={toggleForm}>Sign up</a>
+                  
+                  <div className="social-login">
+                    <p>Or continue with</p>
+                    <div className="google-login-container">
+                      <GoogleLogin
+                        onSuccess={handleGoogleLoginSuccess}
+                        onError={handleGoogleLoginError}
+                        useOneTap
+                        theme="filled_blue"
+                        shape="rectangular"
+                        text="signin_with"
+                        size="large"
+                        width="100%"
+                      />
+                    </div>
                   </div>
                 </>
               )
