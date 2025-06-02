@@ -406,6 +406,20 @@ export const taskAPI = {
       };
     }
   },
+
+  rateTask: async (taskId, rating) => {
+    try {
+      const response = await api.post(`/tasks/task/${taskId}/rate`, { rating });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to submit rating',
+        error: error.response?.data,
+        statusCode: error.response?.status
+      };
+    }
+  },
 };
 
 export default api;

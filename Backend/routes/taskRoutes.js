@@ -15,7 +15,8 @@ import {
   getCompletedTasks,
   saveTask,
   markTaskAsOngoing,
-  assignTaskByProvider
+  assignTaskByProvider,
+  rateTaskController
 } from '../controllers/taskController.js';
 
 import authMiddleware from '../middleware/authMiddleware.js';
@@ -55,6 +56,9 @@ router.post('/task/mark-ongoing/:id', authMiddleware, markTaskAsOngoing);
 
 // Complete a task
 router.post('/task/complete/:id', authMiddleware, completeTask);
+
+// Rate a task
+router.post('/task/:taskId/rate', authMiddleware, rateTaskController);
 
 // Delete a task
 router.delete('/task/delete/:id', authMiddleware, deleteTask);

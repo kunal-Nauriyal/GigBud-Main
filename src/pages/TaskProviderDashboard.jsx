@@ -30,6 +30,10 @@ const TaskProviderDashboard = () => {
   const [editableProviderProfile, setEditableProviderProfile] = useState(null);
   const [taskCreated, setTaskCreated] = useState(false);
   const [viewingProfile, setViewingProfile] = useState(null);
+  const [ratingModalTask, setRatingModalTask] = useState(null);
+  const [currentRating, setCurrentRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -91,6 +95,7 @@ const TaskProviderDashboard = () => {
             break;
         }
         setTasks(filteredTasks);
+        calculateAverageRating(filteredTasks);
       } else {
         throw new Error(response.message || 'Failed to fetch tasks');
       }
@@ -104,6 +109,20 @@ const TaskProviderDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateAverageRating = (tasks) => {
+    const completedTasks = tasks.filter(task => task.status === 'completed');
+    if (completedTasks.length === 0) {
+      setAverageRating(0);
+      return;
+    }
+
+    const totalRatings = completedTasks.reduce((sum, task) => {
+      return sum + (task.creatorRating || 0);
+    }, 0);
+
+    setAverageRating((totalRatings / completedTasks.length).toFixed(1));
   };
 
   const fetchUserProfile = async () => {
@@ -230,6 +249,58 @@ const TaskProviderDashboard = () => {
     setViewingProfile(applicant);
   };
 
+  const handleGiveRating = (task) => {
+    setRatingModalTask(task);
+    setCurrentRating(task.creatorRating || 0);
+    setHoverRating(0);
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!ratingModalTask || currentRating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+
+    try {
+      // Optimistically update the UI
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === ratingModalTask._id
+            ? { ...task, creatorRating: currentRating }
+            : task
+        )
+      );
+
+      await taskAPI.rateTask(ratingModalTask._id, currentRating);
+      toast.success('Rating submitted successfully');
+      
+      // Recalculate average rating
+      const updatedTasks = tasks.map(task =>
+        task._id === ratingModalTask._id
+          ? { ...task, creatorRating: currentRating }
+          : task
+      );
+      calculateAverageRating(updatedTasks);
+
+      setRatingModalTask(null);
+      setCurrentRating(0);
+      setHoverRating(0);
+    } catch (err) {
+      console.error('Rating submission error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to submit rating';
+      toast.error(errorMsg);
+      
+      // Revert optimistic update if there was an error
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === ratingModalTask._id
+            ? { ...task, creatorRating: ratingModalTask.creatorRating }
+            : task
+        )
+      );
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'create') {
       setShowTaskFormModal(true);
@@ -251,10 +322,6 @@ const TaskProviderDashboard = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedTask(null);
-  };
-
-  const handleGiveRating = (taskId) => {
-    console.log(`Giving rating for task ${taskId}`);
   };
 
   const handleViewAllApplicants = (task) => {
@@ -353,6 +420,29 @@ const TaskProviderDashboard = () => {
     setEditProviderMode(false);
   };
 
+  const renderStarRating = (rating) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${i <= (hoverRating || rating) ? 'filled' : ''}`}
+          onClick={() => setCurrentRating(i)}
+          onMouseEnter={() => setHoverRating(i)}
+          onMouseLeave={() => setHoverRating(0)}
+        >
+          ★
+        </span>
+      );
+    }
+    return (
+      <div className="star-rating">
+        {stars}
+        <span className="rating-text">{rating > 0 ? `${rating}/5` : 'Not rated'}</span>
+      </div>
+    );
+  };
+
   const renderCreateTask = () => (
     <>
       {showTaskFormModal && (
@@ -436,15 +526,27 @@ const TaskProviderDashboard = () => {
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Completed by: {task.assignedTo?.name || task.completedBy?.name || 'Unknown'}</p>
               <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-              <button
-                className="primary-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGiveRating(task._id);
-                }}
-              >
-                Give Rating
-              </button>
+              <div className="task-rating prominent-rating">
+                <h4>Your Rating:</h4>
+                {task.creatorRating ? (
+                  <div className="existing-rating">
+                    {renderStarRating(task.creatorRating)}
+                  </div>
+                ) : (
+                  <div className="no-rating">
+                    <p>Not yet rated</p>
+                    <button
+                      className="primary-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGiveRating(task);
+                      }}
+                    >
+                      Rate Task
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))
         ) : (
@@ -559,6 +661,17 @@ const TaskProviderDashboard = () => {
               ) : (
                 <span>{providerProfile.phone || 'Not provided'}</span>
               )}
+            </div>
+            <div className="profile-field">
+              <label>Average Rating:</label>
+              <span>
+                {averageRating > 0 ? (
+                  <>
+                    {renderStarRating(averageRating)}
+                    ({averageRating}/5 from {tasks.filter(t => t.status === 'completed' && t.creatorRating).length} tasks)
+                  </>
+                ) : 'No ratings yet'}
+              </span>
             </div>
           </div>
           <div className="profile-modal-actions">
@@ -721,6 +834,18 @@ const TaskProviderDashboard = () => {
                       <p>{selectedTask.additionalNotes}</p>
                     </div>
                   )}
+                  {selectedTask.status === 'completed' && (
+                    <div className="detail-item">
+                      <label>Your Rating:</label>
+                      <span>
+                        {selectedTask.creatorRating ? (
+                          renderStarRating(selectedTask.creatorRating)
+                        ) : (
+                          <span>Not yet rated</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -743,6 +868,9 @@ const TaskProviderDashboard = () => {
                           <p>Email: {selectedTask.completedBy?.email || selectedTask.assignedTo?.email || 'Not available'}</p>
                           <p>Phone: {selectedTask.completedBy?.phone || selectedTask.assignedTo?.phone || 'Not available'}</p>
                           <span className="status-badge completed">Completed</span>
+                          {selectedTask.creatorRating && (
+                            <p>Your Rating: {renderStarRating(selectedTask.creatorRating)}</p>
+                          )}
                         </div>
                       </div>
                     ) : selectedTask.status === 'accepted' && selectedTask.assignedTo ? (
@@ -805,6 +933,19 @@ const TaskProviderDashboard = () => {
                 </div>
               )}
             </div>
+            {selectedTask.status === 'completed' && !selectedTask.creatorRating && (
+              <div className="modal-footer">
+                <button
+                  className="primary-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGiveRating(selectedTask);
+                  }}
+                >
+                  Rate Task
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -847,6 +988,34 @@ const TaskProviderDashboard = () => {
                   <span>{Array.isArray(viewingProfile.user.skills) ? viewingProfile.user.skills.join(", ") : viewingProfile.user.skills}</span>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {ratingModalTask && (
+        <div className="modal-overlay" onClick={() => setRatingModalTask(null)}>
+          <div className="modal-content rating-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setRatingModalTask(null)}>×</button>
+            <h2>Rate Task: {getTaskDisplayTitle(ratingModalTask)}</h2>
+            <div className="rating-modal-content">
+              <p>Rate the performance for this task:</p>
+              {renderStarRating(currentRating)}
+              <div className="rating-actions">
+                <button 
+                  className="primary-button" 
+                  onClick={handleRatingSubmit}
+                  disabled={currentRating === 0}
+                >
+                  Submit Rating
+                </button>
+                <button 
+                  className="secondary-button" 
+                  onClick={() => setRatingModalTask(null)}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -502,3 +502,82 @@ export const assignTaskByProvider = async (req, res) => {
     return errorResponse(res, error.message || 'Failed to assign task', 500);
   }
 };
+
+export const rateTaskController = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { rating, feedback } = req.body;
+    const userId = req.user?.id;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return errorResponse(res, 'Rating must be between 1 and 5', 400);
+    }
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return errorResponse(res, 'Task not found', 404);
+    }
+
+    // Check if user is either the task creator or the assigned user
+    const isCreator = compareIds(task.user, userId);
+    const isAssigned = compareIds(task.assignedTo, userId);
+
+    if (!isCreator && !isAssigned) {
+      return errorResponse(res, 'Only task participants can rate this task', 403);
+    }
+
+    // Check if the task is completed
+    if (task.status !== 'completed') {
+      return errorResponse(res, 'Only completed tasks can be rated', 400);
+    }
+
+    // Update the rating and feedback
+    if (isCreator) {
+      task.creatorRating = rating;
+      if (feedback && feedback.trim()) {
+        task.creatorFeedback = feedback.trim();
+      }
+    } else {
+      task.workerRating = rating;
+      if (feedback && feedback.trim()) {
+        task.workerFeedback = feedback.trim();
+      }
+    }
+
+    await task.save();
+
+    // Update user ratings
+    if (isAssigned) {
+      await updateUserRating(task.user);
+    } else if (isCreator) {
+      await updateUserRating(task.assignedTo);
+    }
+
+    return successResponse(res, 'Rating saved successfully', 200, task);
+  } catch (error) {
+    console.error('Rating error:', error);
+    return errorResponse(res, error.message || 'Internal server error', 500);
+  }
+};
+
+const updateUserRating = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    // Calculate average rating from all completed tasks where user was the worker
+    const tasks = await Task.find({
+      assignedTo: userId,
+      status: 'completed',
+      workerRating: { $exists: true, $gte: 1, $lte: 5 }
+    });
+
+    if (tasks.length > 0) {
+      const totalRating = tasks.reduce((sum, task) => sum + task.workerRating, 0);
+      user.rating = parseFloat((totalRating / tasks.length).toFixed(1));
+      await user.save();
+    }
+  } catch (error) {
+    console.error('Error updating user rating:', error);
+  }
+};
