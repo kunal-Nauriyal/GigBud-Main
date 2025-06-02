@@ -36,7 +36,8 @@ const Profile = () => {
           setForm(initialProfile);
         }
 
-        const res = await api.get('/user/me');
+        // Fixed: Change from '/user/me' to '/users/me'
+        const res = await api.get('/users/me');
         const apiUser = res.data.data;
         const updatedProfile = {
           name: user?.name || apiUser.name || 'Unnamed User',
@@ -83,7 +84,8 @@ const Profile = () => {
         setMessage('Name and email are required.');
         return;
       }
-      const res = await api.put('/user/me', form);
+      // Fixed: Change from '/user/me' to '/users/me'
+      const res = await api.put('/users/me', form);
       setProfile({ ...profile, ...res.data.data });
       setEditing(false);
       setMessage('Profile updated successfully!');

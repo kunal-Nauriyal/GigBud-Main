@@ -30,13 +30,6 @@ const TaskProviderDashboard = () => {
   const [editableProviderProfile, setEditableProviderProfile] = useState(null);
   const [taskCreated, setTaskCreated] = useState(false);
   const [viewingProfile, setViewingProfile] = useState(null);
-  const [otpModal, setOtpModal] = useState({
-    open: false,
-    type: '',
-    otp: '',
-    verifying: false,
-    error: null
-  });
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -63,11 +56,9 @@ const TaskProviderDashboard = () => {
     if (user) {
       const initialProfile = {
         image: user.avatar || DEFAULT_PROFILE_IMAGE,
-        name: user.name || 'Unnamed User',
-        email: user.email || 'email@example.com',
+        name: user.name,
+        email: user.email,
         phone: user.phone || '',
-        phoneVerified: Boolean(user.phoneVerified || false),
-        emailVerified: Boolean(user.emailVerified || false),
         age: user.age || '',
         profession: user.profession || '',
       };
@@ -122,11 +113,13 @@ const TaskProviderDashboard = () => {
       if (!token) {
         throw new Error('No access token found');
       }
-      const res = await axios.get('/api/me', {
+      const res = await axios.get('http://localhost:3000/api/users/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      
+      console.log('Response from /api/users/me:', res.data);
       
       if (!res.data || !res.data.success) {
         throw new Error('Invalid API response structure');
@@ -139,11 +132,9 @@ const TaskProviderDashboard = () => {
 
       const profileData = {
         image: user?.avatar || apiUser.avatar || DEFAULT_PROFILE_IMAGE,
-        name: user?.name || apiUser.name || 'Unnamed User',
-        email: user?.email || apiUser.email || 'email@example.com',
+        name: user?.name || apiUser.name,
+        email: user?.email || apiUser.email,
         phone: apiUser.phone || user?.phone || '',
-        phoneVerified: Boolean(apiUser.phoneVerified || user?.phoneVerified || false),
-        emailVerified: Boolean(apiUser.emailVerified || user?.emailVerified || false),
         age: apiUser.age || user?.age || '',
         profession: apiUser.profession || user?.profession || '',
       };
@@ -162,11 +153,9 @@ const TaskProviderDashboard = () => {
       if (user) {
         const fallbackProfile = {
           image: user.avatar || DEFAULT_PROFILE_IMAGE,
-          name: user.name || 'Unnamed User',
-          email: user.email || 'email@example.com',
+          name: user.name,
+          email: user.email,
           phone: user.phone || 'Not available',
-          phoneVerified: Boolean(user.phoneVerified || false),
-          emailVerified: Boolean(user.emailVerified || false),
           age: user.age || 'Not specified',
           profession: user.profession || 'Not specified',
         };
@@ -178,8 +167,6 @@ const TaskProviderDashboard = () => {
           name: 'Unnamed User',
           email: 'email@example.com',
           phone: 'Not available',
-          phoneVerified: false,
-          emailVerified: false,
           age: 'Not specified',
           profession: 'Not specified',
         };
@@ -190,53 +177,6 @@ const TaskProviderDashboard = () => {
       toast.error('Failed to load profile from API.');
     } finally {
       setProfileLoading(false);
-    }
-  };
-
-  const handleVerifyClick = (type) => {
-    if ((type === 'email' && providerProfile.emailVerified) || 
-        (type === 'phone' && providerProfile.phoneVerified)) {
-      return;
-    }
-    setOtpModal({
-      open: true,
-      type,
-      otp: '',
-      verifying: false,
-      error: null
-    });
-  };
-
-  const handleOtpChange = (e) => {
-    setOtpModal(prev => ({ ...prev, otp: e.target.value }));
-  };
-
-  const handleVerifyOtp = async () => {
-    try {
-      setOtpModal(prev => ({ ...prev, verifying: true, error: null }));
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      
-      const response = await axios.post(`/api/verify-${otpModal.type}-otp`, {
-        otp: otpModal.otp
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.data.success) {
-        toast.success(`${otpModal.type === 'email' ? 'Email' : 'Phone'} verified successfully!`);
-        fetchUserProfile();
-        setOtpModal({ open: false, type: '', otp: '', verifying: false, error: null });
-      } else {
-        throw new Error(response.data.message || 'Verification failed');
-      }
-    } catch (err) {
-      setOtpModal(prev => ({
-        ...prev,
-        verifying: false,
-        error: err.response?.data?.message || err.message || 'Verification failed'
-      }));
     }
   };
 
@@ -366,22 +306,22 @@ const TaskProviderDashboard = () => {
 
   const handleSaveProviderProfile = async () => {
     try {
-      if (!editableProviderProfile?.name || !editableProviderProfile?.email) {
-        toast.error('Name and email are required fields');
+      if (!editableProviderProfile?.name) {
+        toast.error('Name is a required field');
         return;
       }
 
       const updated = {
         name: editableProviderProfile.name,
-        email: editableProviderProfile.email,
         avatar: editableProviderProfile.image,
         age: editableProviderProfile.age || '',
         profession: editableProviderProfile.profession || '',
         phone: editableProviderProfile.phone || '',
+        email: editableProviderProfile.email || '',
       };
 
       const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      const response = await axios.put('/api/me', updated, {
+      const response = await axios.put('http://localhost:3000/api/users/me', updated, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -575,18 +515,10 @@ const TaskProviderDashboard = () => {
                   name="email" 
                   value={editableProviderProfile.email} 
                   onChange={handleProviderProfileInputChange} 
-                  required
                 />
               ) : (
                 <span>{providerProfile.email}</span>
               )}
-              <span 
-                className={`verify-badge ${providerProfile.emailVerified ? 'verified' : 'not-verified'}`}
-                onClick={() => handleVerifyClick('email')}
-                style={{ cursor: providerProfile.emailVerified ? 'default' : 'pointer' }}
-              >
-                {providerProfile.emailVerified ? '✔ Verified' : 'Click to Verify'}
-              </span>
             </div>
             <div className="profile-field">
               <label>Age:</label>
@@ -627,13 +559,6 @@ const TaskProviderDashboard = () => {
               ) : (
                 <span>{providerProfile.phone || 'Not provided'}</span>
               )}
-              <span 
-                className={`verify-badge ${providerProfile.phoneVerified ? 'verified' : 'not-verified'}`}
-                onClick={() => handleVerifyClick('phone')}
-                style={{ cursor: providerProfile.phoneVerified ? 'default' : 'pointer' }}
-              >
-                {providerProfile.phoneVerified ? '✔ Verified' : 'Click to Verify'}
-              </span>
             </div>
           </div>
           <div className="profile-modal-actions">
@@ -922,40 +847,6 @@ const TaskProviderDashboard = () => {
                   <span>{Array.isArray(viewingProfile.user.skills) ? viewingProfile.user.skills.join(", ") : viewingProfile.user.skills}</span>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {otpModal.open && (
-        <div className="modal-overlay">
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setOtpModal({ open: false })}>×</button>
-            <h2>Verify {otpModal.type}</h2>
-            <p>Enter the OTP sent to your {otpModal.type}</p>
-            <input
-              type="text"
-              value={otpModal.otp}
-              onChange={handleOtpChange}
-              placeholder="Enter OTP"
-              className="otp-input"
-            />
-            {otpModal.error && <div className="error-message">{otpModal.error}</div>}
-            <div className="modal-actions">
-              <button 
-                className="primary-button" 
-                onClick={handleVerifyOtp}
-                disabled={otpModal.verifying || !otpModal.otp}
-              >
-                {otpModal.verifying ? 'Verifying...' : 'Verify'}
-              </button>
-              <button 
-                className="secondary-button" 
-                onClick={() => setOtpModal({ open: false })}
-                disabled={otpModal.verifying}
-              >
-                Cancel
-              </button>
             </div>
           </div>
         </div>
