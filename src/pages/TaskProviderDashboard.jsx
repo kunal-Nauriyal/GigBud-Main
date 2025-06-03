@@ -41,6 +41,8 @@ const TaskProviderDashboard = () => {
         return 'open';
       case 'accepted':
         return 'assigned';
+      case 'awaiting-approval':
+        return 'pending approval';
       case 'completed':
         return 'closed';
       default:
@@ -83,10 +85,10 @@ const TaskProviderDashboard = () => {
         let filteredTasks = response.data || [];
         switch (activeTab) {
           case 'posted':
-            filteredTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'accepted' || task.status === 'completed');
+            filteredTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'accepted' || task.status === 'completed' || task.status === 'awaiting-approval');
             break;
           case 'ongoing':
-            filteredTasks = filteredTasks.filter(task => task.status === 'accepted');
+            filteredTasks = filteredTasks.filter(task => task.status === 'accepted' || task.status === 'awaiting-approval');
             break;
           case 'completed':
             filteredTasks = filteredTasks.filter(task => task.status === 'completed');
@@ -217,10 +219,20 @@ const TaskProviderDashboard = () => {
   const handleMarkComplete = async (taskId) => {
     try {
       await taskAPI.completeTask(taskId);
-      toast.success('Task marked as complete');
+      toast.success('Task marked as complete - awaiting your approval');
       setTaskCreated(prev => !prev);
     } catch (err) {
       toast.error(err.message || 'Failed to update task status');
+    }
+  };
+
+  const handleApproveCompletion = async (taskId) => {
+    try {
+      await taskAPI.approveCompletion(taskId);
+      toast.success('Task completion approved');
+      setTaskCreated(prev => !prev);
+    } catch (err) {
+      toast.error(err.message || 'Failed to approve completion');
     }
   };
 
@@ -251,7 +263,7 @@ const TaskProviderDashboard = () => {
 
   const handleGiveRating = (task) => {
     setRatingModalTask(task);
-    setCurrentRating(task.creatorRating || 0);
+    setCurrentRating(task.creatorRating || task.workerRating || 0);
     setHoverRating(0);
   };
 
@@ -271,7 +283,7 @@ const TaskProviderDashboard = () => {
         )
       );
 
-      await taskAPI.rateTask(ratingModalTask._id, currentRating);
+      await taskAPI.rateTask(ratingModalTask._id, currentRating, 'provider');
       toast.success('Rating submitted successfully');
       
       // Recalculate average rating
@@ -494,15 +506,28 @@ const TaskProviderDashboard = () => {
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Assigned to: {task.assignedTo?.name || 'Unknown'}</p>
               <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-              <button
-                className="primary-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMarkComplete(task._id);
-                }}
-              >
-                Mark as Complete
-              </button>
+              {task.status === 'accepted' && (
+                <button
+                  className="primary-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMarkComplete(task._id);
+                  }}
+                >
+                  Mark as Complete
+                </button>
+              )}
+              {task.status === 'awaiting-approval' && (
+                <button
+                  className="primary-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApproveCompletion(task._id);
+                  }}
+                >
+                  Approve Completion
+                </button>
+              )}
             </div>
           ))
         ) : (

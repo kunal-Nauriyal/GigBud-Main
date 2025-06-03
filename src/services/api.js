@@ -230,6 +230,27 @@ export const taskAPI = {
     }
   },
 
+  markTaskAsReadyForCompletion: async (taskId) => {
+    try {
+      if (!taskId) {
+        return {
+          success: false,
+          message: 'Task ID is required'
+        };
+      }
+
+      const response = await api.post(`/tasks/task/ready/${taskId}`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to mark task as ready for completion',
+        error: error.response?.data,
+        statusCode: error.response?.status
+      };
+    }
+  },
+
   completeTask: async (taskId) => {
     try {
       if (!taskId) {
@@ -407,14 +428,32 @@ export const taskAPI = {
     }
   },
 
-  rateTask: async (taskId, rating) => {
+  rateTask: async (taskId, rating, role) => {
     try {
-      const response = await api.post(`/tasks/task/${taskId}/rate`, { rating });
-      return { success: true, data: response.data };
+      if (!taskId) {
+        return {
+          success: false,
+          message: 'Task ID is required'
+        };
+      }
+      if (!rating || rating < 1 || rating > 5) {
+        return {
+          success: false,
+          message: 'Valid rating (1-5) is required'
+        };
+      }
+      if (!role || (role !== 'provider' && role !== 'receiver')) {
+        return {
+          success: false,
+          message: 'Role must be either provider or receiver'
+        };
+      }
+      const response = await api.post(`/tasks/task/rate/${taskId}`, { rating, role });
+      return { success: true, data: response.data.data };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to submit rating',
+        message: error.response?.data?.message || 'Failed to rate task',
         error: error.response?.data,
         statusCode: error.response?.status
       };

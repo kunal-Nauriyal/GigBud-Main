@@ -238,22 +238,16 @@ const TaskReceiverDashboard = () => {
   const handleMarkComplete = async (taskId) => {
     try {
       setLoading(true);
-      const response = await taskAPI.completeTask(taskId);
+      const response = await taskAPI.markTaskAsReadyForCompletion(taskId);
       if (response.success) {
-        setOngoingTasks(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(taskId);
-          return newSet;
-        });
-        setCompletedTasks(prev => new Set(prev).add(taskId));
-        toast.success('Task marked as complete');
+        toast.success('Task marked as ready for provider review');
         fetchTasks();
-        setActiveTab('completed');
+        setActiveTab('ongoing');
       } else {
-        throw new Error(response.message || 'Failed to mark task as complete');
+        throw new Error(response.message || 'Failed to submit completion');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Failed to mark task as complete');
+      toast.error(err.response?.data?.message || err.message || 'Failed to submit completion');
     } finally {
       setLoading(false);
     }
@@ -265,7 +259,7 @@ const TaskReceiverDashboard = () => {
 
   const handleGiveRating = (task) => {
     setRatingModalTask(task);
-    setCurrentRating(task.workerRating || 0);
+    setCurrentRating(task.workerRating || task.creatorRating || 0);
     setHoverRating(0);
   };
 
@@ -283,7 +277,7 @@ const TaskReceiverDashboard = () => {
             : task
         )
       );
-      await taskAPI.rateTask(ratingModalTask._id, currentRating);
+      await taskAPI.rateTask(ratingModalTask._id, currentRating, 'receiver');
       toast.success('Rating submitted successfully');
       setRatingModalTask(null);
       setCurrentRating(0);
@@ -480,7 +474,7 @@ const TaskReceiverDashboard = () => {
                     handleMarkComplete(task._id);
                   }}
                 >
-                  Mark as Complete
+                  Submit for Review
                 </button>
               )}
             </div>
@@ -560,7 +554,7 @@ const TaskReceiverDashboard = () => {
                   handleMarkComplete(task._id);
                 }}
               >
-                Mark as Complete
+                Submit for Review
               </button>
             </div>
           </div>
@@ -975,7 +969,7 @@ const TaskReceiverDashboard = () => {
                   className="mark-complete"
                   onClick={() => handleMarkComplete(selectedTask._id)}
                 >
-                  Mark as Complete
+                  Submit for Review
                 </button>
               )}
             </div>
