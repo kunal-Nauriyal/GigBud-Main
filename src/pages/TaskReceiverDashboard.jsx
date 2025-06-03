@@ -36,6 +36,9 @@ const TaskReceiverDashboard = () => {
   const [savedTasks, setSavedTasks] = useState(new Set());
   const [ongoingTasks, setOngoingTasks] = useState(new Set());
   const [completedTasks, setCompletedTasks] = useState(new Set());
+  const [ratingModalTask, setRatingModalTask] = useState(null);
+  const [currentRating, setCurrentRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -258,6 +261,69 @@ const TaskReceiverDashboard = () => {
 
   const handleRate = (taskId, rating) => {
     setRatings({ ...ratings, [taskId]: rating });
+  };
+
+  const handleGiveRating = (task) => {
+    setRatingModalTask(task);
+    setCurrentRating(task.workerRating || 0);
+    setHoverRating(0);
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!ratingModalTask || currentRating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+    try {
+      // Optimistically update the UI
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === ratingModalTask._id
+            ? { ...task, workerRating: currentRating }
+            : task
+        )
+      );
+      await taskAPI.rateTask(ratingModalTask._id, currentRating);
+      toast.success('Rating submitted successfully');
+      setRatingModalTask(null);
+      setCurrentRating(0);
+      setHoverRating(0);
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to submit rating';
+      toast.error(errorMsg);
+      // Revert optimistic update if there was an error
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === ratingModalTask._id
+            ? { ...task, workerRating: ratingModalTask.workerRating }
+            : task
+        )
+      );
+    }
+  };
+
+  const renderStarRating = (rating) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star${i <= (hoverRating || rating) ? ' filled' : ' inactive'}`}
+          style={{ color: i <= (hoverRating || rating) ? '#ffd700' : '#e0e0e0', cursor: 'pointer', fontSize: '1.5rem' }}
+          onClick={() => setCurrentRating(i)}
+          onMouseEnter={() => setHoverRating(i)}
+          onMouseLeave={() => setHoverRating(0)}
+        >
+          ★
+        </span>
+      );
+    }
+    return (
+      <div className="star-rating">
+        {stars}
+        <span className="rating-text">{rating > 0 ? `${rating}/5` : 'Not rated'}</span>
+      </div>
+    );
   };
 
   const filteredTasks = tasks
@@ -526,17 +592,22 @@ const TaskReceiverDashboard = () => {
             </div>
             <div className="gigbud-rating">
               <span>Your Rating:</span>
-              {[1,2,3,4,5].map(star => (
-                <span
-                  key={star}
-                  className={`star${ratings[task._id] >= star ? '' : ' inactive'}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRate(task._id, star);
-                  }}
-                >★</span>
-              ))}
-              {ratings[task._id] && <span style={{ marginLeft: 8 }}>{ratings[task._id]}/5</span>}
+              {task.workerRating ? (
+                renderStarRating(task.workerRating)
+              ) : (
+                <>
+                  <span className="no-rating">Not yet rated</span>
+                  <button
+                    className="primary-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGiveRating(task);
+                    }}
+                  >
+                    Rate Task
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))
@@ -907,6 +978,34 @@ const TaskReceiverDashboard = () => {
                   Mark as Complete
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {ratingModalTask && (
+        <div className="modal-overlay" onClick={() => setRatingModalTask(null)}>
+          <div className="modal-content rating-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setRatingModalTask(null)}>×</button>
+            <h2>Rate Task: {ratingModalTask.title || ratingModalTask.jobType || 'Untitled Task'}</h2>
+            <div className="rating-modal-content">
+              <p>Rate the performance for this task:</p>
+              {renderStarRating(currentRating)}
+              <div className="rating-actions">
+                <button 
+                  className="primary-button" 
+                  onClick={handleRatingSubmit}
+                  disabled={currentRating === 0}
+                >
+                  Submit Rating
+                </button>
+                <button 
+                  className="secondary-button" 
+                  onClick={() => setRatingModalTask(null)}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
