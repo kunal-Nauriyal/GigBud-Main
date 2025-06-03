@@ -59,7 +59,7 @@ const TaskProviderDashboard = () => {
 
     if (user) {
       const initialProfile = {
-        image: user.avatar || DEFAULT_PROFILE_IMAGE,
+        avatar: user.avatar || DEFAULT_PROFILE_IMAGE,
         name: user.name,
         email: user.email,
         phone: user.phone || '',
@@ -150,7 +150,7 @@ const TaskProviderDashboard = () => {
       }
 
       const profileData = {
-        image: user?.avatar || apiUser.avatar || DEFAULT_PROFILE_IMAGE,
+        avatar: user?.avatar || apiUser.avatar || DEFAULT_PROFILE_IMAGE,
         name: user?.name || apiUser.name,
         email: user?.email || apiUser.email,
         phone: apiUser.phone || user?.phone || '',
@@ -171,7 +171,7 @@ const TaskProviderDashboard = () => {
       
       if (user) {
         const fallbackProfile = {
-          image: user.avatar || DEFAULT_PROFILE_IMAGE,
+          avatar: user.avatar || DEFAULT_PROFILE_IMAGE,
           name: user.name,
           email: user.email,
           phone: user.phone || 'Not available',
@@ -182,7 +182,7 @@ const TaskProviderDashboard = () => {
         setEditableProviderProfile(fallbackProfile);
       } else {
         const defaultProfile = {
-          image: DEFAULT_PROFILE_IMAGE,
+          avatar: DEFAULT_PROFILE_IMAGE,
           name: 'Unnamed User',
           email: 'email@example.com',
           phone: 'Not available',
@@ -380,7 +380,7 @@ const TaskProviderDashboard = () => {
 
       const updated = {
         name: editableProviderProfile.name,
-        avatar: editableProviderProfile.image,
+        avatar: editableProviderProfile.avatar,
         age: editableProviderProfile.age || '',
         profession: editableProviderProfile.profession || '',
         phone: editableProviderProfile.phone || '',
@@ -426,7 +426,8 @@ const TaskProviderDashboard = () => {
       stars.push(
         <span
           key={i}
-          className={`star ${i <= (hoverRating || rating) ? 'filled' : ''}`}
+          className={`star${i <= (hoverRating || rating) ? ' filled' : ' inactive'}`}
+          style={{ color: i <= (hoverRating || rating) ? '#ffd700' : '#e0e0e0', cursor: 'pointer', fontSize: '1.5rem' }}
           onClick={() => setCurrentRating(i)}
           onMouseEnter={() => setHoverRating(i)}
           onMouseLeave={() => setHoverRating(0)}
@@ -565,7 +566,7 @@ const TaskProviderDashboard = () => {
         <div className="profile-modal-content">
           <div className="profile-image-row">
             <img 
-              src={editProviderMode ? editableProviderProfile.image : providerProfile.image} 
+              src={editProviderMode ? editableProviderProfile.avatar : providerProfile.avatar} 
               alt="Profile" 
               className="profile-image" 
               onError={(e) => {
@@ -576,17 +577,17 @@ const TaskProviderDashboard = () => {
               <div className="profile-image-edit">
                 <input 
                   type="text" 
-                  name="image" 
-                  value={editableProviderProfile.image} 
+                  name="avatar" 
+                  value={editableProviderProfile.avatar} 
                   onChange={handleProviderProfileInputChange} 
-                  placeholder="Image URL" 
+                  placeholder="Avatar URL" 
                   className="profile-image-input" 
                 />
                 <button 
                   className="small-button"
                   onClick={() => setEditableProviderProfile({
                     ...editableProviderProfile,
-                    image: DEFAULT_PROFILE_IMAGE
+                    avatar: DEFAULT_PROFILE_IMAGE
                   })}
                 >
                   Use Default
@@ -904,7 +905,6 @@ const TaskProviderDashboard = () => {
                           <div className="applicant-info">
                             <h4>{applicant.user?.name || 'Unnamed User'}</h4>
                             <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
-                            <p>Proposed Price: ₹{applicant.proposedPrice || 'Not specified'}</p>
                           </div>
                           <div className="applicant-actions">
                             <button
@@ -971,10 +971,6 @@ const TaskProviderDashboard = () => {
               <div className="profile-field">
                 <label>Rating:</label>
                 <span>{viewingProfile.rating || 'No rating'} ⭐</span>
-              </div>
-              <div className="profile-field">
-                <label>Proposed Price:</label>
-                <span>₹{viewingProfile.proposedPrice || 'Not specified'}</span>
               </div>
               {viewingProfile.user?.phone && (
                 <div className="profile-field">

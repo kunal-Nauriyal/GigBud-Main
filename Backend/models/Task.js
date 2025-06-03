@@ -141,6 +141,24 @@ const TaskSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+
+    // Ratings and feedback
+    creatorRating: {
+      type: Number,
+      min: 1,
+      max: 5,
+    },
+    workerRating: {
+      type: Number,
+      min: 1,
+      max: 5,
+    },
+    creatorFeedback: {
+      type: String,
+    },
+    workerFeedback: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

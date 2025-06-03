@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async () => {
     try {
-      const userResponse = await api.get('/auth/me');
+      const userResponse = await api.get('/users/me');
 
       if (userResponse.data && userResponse.data.success) {
         const userData = userResponse.data.data;

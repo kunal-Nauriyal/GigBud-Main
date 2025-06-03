@@ -226,7 +226,7 @@ router.post('/google-login', async (req, res) => {
       // Update existing user
       user.isGoogleUser = true;
       user.emailVerified = true;
-      if (picture && !user.avatar) {
+      if (picture) {
         user.avatar = picture;
       }
       await user.save();
