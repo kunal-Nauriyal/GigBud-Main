@@ -598,108 +598,112 @@ const TaskProviderDashboard = () => {
       {profileLoading || !initialCheckDone ? (
         <div className="loading-spinner">Loading profile...</div>
       ) : providerProfile ? (
-        <div className="profile-modal-content" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-          <div className="profile-image-row">
-            <img 
-              src={editProviderMode ? editableProviderProfile.avatar : providerProfile.avatar} 
-              alt="Profile" 
-              className="profile-image" 
-              onError={(e) => {
-                e.target.src = DEFAULT_PROFILE_IMAGE;
-              }}
-            />
+        <>
+          {console.log('DEBUG: providerProfile:', providerProfile)}
+          {console.log('DEBUG: avatar URL:', editProviderMode ? editableProviderProfile.avatar : providerProfile.avatar)}
+          <div className="profile-modal-content" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="profile-image-row">
+              <img 
+                src={editProviderMode ? (editableProviderProfile.avatar || DEFAULT_PROFILE_IMAGE) : (providerProfile.avatar || DEFAULT_PROFILE_IMAGE)} 
+                alt="Profile" 
+                className="profile-image" 
+                onError={(e) => {
+                  e.target.src = DEFAULT_PROFILE_IMAGE;
+                }}
+              />
+            </div>
+            <div className="profile-fields">
+              <div className="profile-field">
+                <label>Name:</label>
+                {editProviderMode ? (
+                  <input 
+                    type="text" 
+                    name="name" 
+                    value={editableProviderProfile.name} 
+                    onChange={handleProviderProfileInputChange} 
+                    required
+                  />
+                ) : (
+                  <span>{providerProfile.name}</span>
+                )}
+              </div>
+              <div className="profile-field">
+                <label>Email:</label>
+                {editProviderMode ? (
+                  <input 
+                    type="email" 
+                    name="email" 
+                    value={editableProviderProfile.email} 
+                    onChange={handleProviderProfileInputChange} 
+                  />
+                ) : (
+                  <span>{providerProfile.email}</span>
+                )}
+              </div>
+              <div className="profile-field">
+                <label>Age:</label>
+                {editProviderMode ? (
+                  <input 
+                    type="number" 
+                    name="age" 
+                    value={editableProviderProfile.age} 
+                    onChange={handleProviderProfileInputChange} 
+                    min="0"
+                  />
+                ) : (
+                  <span>{providerProfile.age || 'Not specified'}</span>
+                )}
+              </div>
+              <div className="profile-field">
+                <label>Profession:</label>
+                {editProviderMode ? (
+                  <input 
+                    type="text" 
+                    name="profession" 
+                    value={editableProviderProfile.profession} 
+                    onChange={handleProviderProfileInputChange} 
+                  />
+                ) : (
+                  <span>{providerProfile.profession || 'Not specified'}</span>
+                )}
+              </div>
+              <div className="profile-field">
+                <label>Phone:</label>
+                {editProviderMode ? (
+                  <input 
+                    type="tel" 
+                    name="phone" 
+                    value={editableProviderProfile.phone} 
+                    onChange={handleProviderProfileInputChange} 
+                  />
+                ) : (
+                  <span>{providerProfile.phone || 'Not provided'}</span>
+                )}
+              </div>
+              <div className="profile-field">
+                <label>Average Rating:</label>
+                <span>
+                  {averageRating > 0 ? (
+                    <>
+                      {renderStarRating(averageRating)}
+                      ({averageRating}/5 from {tasks.filter(t => t.status === 'completed' && t.creatorRating).length} tasks)
+                    </>
+                  ) : 'No ratings yet'}
+                </span>
+              </div>
+            </div>
+            <div className="profile-modal-actions">
+              {editProviderMode ? (
+                <>
+                  <button className="primary-button" onClick={handleSaveProviderProfile}>Save</button>
+                  <button className="secondary-button" onClick={handleCancelProviderEdit}>Cancel</button>
+                </>
+              ) : (
+                <button className="primary-button" onClick={handleEditProviderProfile}>Edit</button>
+              )}
+            </div>
           </div>
-          <div className="profile-fields">
-            <div className="profile-field">
-              <label>Name:</label>
-              {editProviderMode ? (
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={editableProviderProfile.name} 
-                  onChange={handleProviderProfileInputChange} 
-                  required
-                />
-              ) : (
-                <span>{providerProfile.name}</span>
-              )}
-            </div>
-            <div className="profile-field">
-              <label>Email:</label>
-              {editProviderMode ? (
-                <input 
-                  type="email" 
-                  name="email" 
-                  value={editableProviderProfile.email} 
-                  onChange={handleProviderProfileInputChange} 
-                />
-              ) : (
-                <span>{providerProfile.email}</span>
-              )}
-            </div>
-            <div className="profile-field">
-              <label>Age:</label>
-              {editProviderMode ? (
-                <input 
-                  type="number" 
-                  name="age" 
-                  value={editableProviderProfile.age} 
-                  onChange={handleProviderProfileInputChange} 
-                  min="0"
-                />
-              ) : (
-                <span>{providerProfile.age || 'Not specified'}</span>
-              )}
-            </div>
-            <div className="profile-field">
-              <label>Profession:</label>
-              {editProviderMode ? (
-                <input 
-                  type="text" 
-                  name="profession" 
-                  value={editableProviderProfile.profession} 
-                  onChange={handleProviderProfileInputChange} 
-                />
-              ) : (
-                <span>{providerProfile.profession || 'Not specified'}</span>
-              )}
-            </div>
-            <div className="profile-field">
-              <label>Phone:</label>
-              {editProviderMode ? (
-                <input 
-                  type="tel" 
-                  name="phone" 
-                  value={editableProviderProfile.phone} 
-                  onChange={handleProviderProfileInputChange} 
-                />
-              ) : (
-                <span>{providerProfile.phone || 'Not provided'}</span>
-              )}
-            </div>
-            <div className="profile-field">
-              <label>Average Rating:</label>
-              <span>
-                {averageRating > 0 ? (
-                  <>
-                    {renderStarRating(averageRating)}
-                    ({averageRating}/5 from {tasks.filter(t => t.status === 'completed' && t.creatorRating).length} tasks)
-                  </>
-                ) : 'No ratings yet'}
-              </span>
-            </div>
-          </div>
-          <div className="profile-modal-actions">
-            {editProviderMode ? (
-              <>
-                <button className="primary-button" onClick={handleSaveProviderProfile}>Save</button>
-                <button className="secondary-button" onClick={handleCancelProviderEdit}>Cancel</button>
-              </>
-            ) : (
-              <button className="primary-button" onClick={handleEditProviderProfile}>Edit</button>
-            )}
-          </div>
-        </div>
+        </>
       ) : (
         <p>Failed to load profile</p>
       )}
