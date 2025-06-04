@@ -87,7 +87,17 @@ const TaskProviderDashboard = () => {
         let filteredTasks = response.data || [];
         switch (activeTab) {
           case 'posted':
-            filteredTasks = filteredTasks.filter(task => task.status === 'pending' || task.status === 'accepted' || task.status === 'completed' || task.status === 'awaiting-approval');
+            filteredTasks = filteredTasks.filter(task =>
+              [
+                'pending',
+                'applied',
+                'accepted',
+                'in-progress',
+                'ready-for-review',
+                'completed',
+                'awaiting-approval'
+              ].includes(task.status)
+            );
             break;
           case 'ongoing':
             filteredTasks = filteredTasks.filter(task => task.status === 'accepted' || task.status === 'awaiting-approval');
@@ -590,7 +600,7 @@ const TaskProviderDashboard = () => {
       {profileLoading || !initialCheckDone ? (
         <div className="loading-spinner">Loading profile...</div>
       ) : providerProfile ? (
-        <div className="profile-modal-content">
+        <div className="profile-modal-content" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <div className="profile-image-row">
             <img 
               src={editProviderMode ? editableProviderProfile.avatar : providerProfile.avatar} 
@@ -600,27 +610,6 @@ const TaskProviderDashboard = () => {
                 e.target.src = DEFAULT_PROFILE_IMAGE;
               }}
             />
-            {editProviderMode && (
-              <div className="profile-image-edit">
-                <input 
-                  type="text" 
-                  name="avatar" 
-                  value={editableProviderProfile.avatar} 
-                  onChange={handleProviderProfileInputChange} 
-                  placeholder="Avatar URL" 
-                  className="profile-image-input" 
-                />
-                <button 
-                  className="small-button"
-                  onClick={() => setEditableProviderProfile({
-                    ...editableProviderProfile,
-                    avatar: DEFAULT_PROFILE_IMAGE
-                  })}
-                >
-                  Use Default
-                </button>
-              </div>
-            )}
           </div>
           <div className="profile-fields">
             <div className="profile-field">

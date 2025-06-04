@@ -49,12 +49,8 @@ const TaskReceiverDashboard = () => {
       return;
     }
 
-    // Always show 'available' tab on login
-    setActiveTab('available');
-    localStorage.setItem('receiverActiveTab', 'available');
-
     fetchTasks();
-  }, [isLoggedIn, navigate, location]);
+  }, [isLoggedIn, navigate, activeTab, location]);
 
   const fetchTasks = async () => {
     try {
