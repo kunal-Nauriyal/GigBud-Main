@@ -491,9 +491,7 @@ const TaskProviderDashboard = () => {
               <h3>{getTaskDisplayTitle(task)}</h3>
               <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
               <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-              {task.applicants?.length > 0 && (
-                <p>Applicants: {task.applicants.length}</p>
-              )}
+              <p>Applicants: {task.applicants?.length || 0}</p>
             </div>
           ))
         ) : (
