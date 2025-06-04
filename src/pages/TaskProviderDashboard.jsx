@@ -13,7 +13,9 @@ const DEFAULT_PROFILE_IMAGE = 'https://img.freepik.com/premium-vector/default-av
 const TaskProviderDashboard = () => {
   const navigate = useNavigate();
   const { isLoggedIn, user, initialCheckDone } = useAuth();
-  const [activeTab, setActiveTab] = useState('posted');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('providerActiveTab') || 'posted';
+  });
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -734,6 +736,11 @@ const TaskProviderDashboard = () => {
     }
   };
 
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    localStorage.setItem('providerActiveTab', tabKey);
+  };
+
   if (!initialCheckDone) {
     return <div>Loading...</div>;
   }
@@ -750,31 +757,31 @@ const TaskProviderDashboard = () => {
         <nav className="sidebar-nav">
           <button 
             className={`nav-item ${activeTab === 'create' ? 'active' : ''}`}
-            onClick={() => setActiveTab('create')}
+            onClick={() => handleTabChange('create')}
           >
             ➕ Create Task
           </button>
           <button 
             className={`nav-item ${activeTab === 'posted' ? 'active' : ''}`}
-            onClick={() => setActiveTab('posted')}
+            onClick={() => handleTabChange('posted')}
           >
             📋 My Posted Tasks
           </button>
           <button 
             className={`nav-item ${activeTab === 'ongoing' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ongoing')}
+            onClick={() => handleTabChange('ongoing')}
           >
             🚧 Ongoing Tasks
           </button>
           <button 
             className={`nav-item ${activeTab === 'completed' ? 'active' : ''}`}
-            onClick={() => setActiveTab('completed')}
+            onClick={() => handleTabChange('completed')}
           >
             ✅ Completed Tasks
           </button>
           <button 
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
+            onClick={() => handleTabChange('profile')}
           >
             🧑‍💼 Profile
           </button>

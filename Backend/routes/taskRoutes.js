@@ -16,7 +16,8 @@ import {
   saveTask,
   markTaskAsOngoing,
   assignTaskByProvider,
-  markTaskReadyForCompletion
+  markTaskReadyForCompletion,
+  rateTask
 } from '../controllers/taskController.js';
 
 import authMiddleware from '../middleware/authMiddleware.js';
@@ -68,5 +69,8 @@ router.get('/tasks/provider/:userId', authMiddleware, getTasksByProvider);
 
 // Get single task by ID (MUST be last)
 router.get('/task/:id', authMiddleware, getTask);
+
+// Add this route before export default
+router.post('/task/rate/:id', authMiddleware, rateTask);
 
 export default router;

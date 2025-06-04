@@ -18,7 +18,9 @@ const TAB_LIST = [
 const TaskReceiverDashboard = () => {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('available');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('receiverActiveTab') || 'available';
+  });
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,8 +49,12 @@ const TaskReceiverDashboard = () => {
       return;
     }
 
+    // Always show 'available' tab on login
+    setActiveTab('available');
+    localStorage.setItem('receiverActiveTab', 'available');
+
     fetchTasks();
-  }, [isLoggedIn, navigate, activeTab, location]);
+  }, [isLoggedIn, navigate, location]);
 
   const fetchTasks = async () => {
     try {
@@ -628,6 +634,11 @@ const TaskReceiverDashboard = () => {
     }
   };
 
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    localStorage.setItem('receiverActiveTab', tabKey);
+  };
+
   return (
     <div className="dashboard-container">
       {loading && <div className="loading-overlay">Loading...</div>}
@@ -663,7 +674,7 @@ const TaskReceiverDashboard = () => {
             <button
               key={tab.key}
               className={`gigbud-tab-btn${activeTab === tab.key ? " active" : ""}`}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
             >
               <span style={{ fontSize: 22, marginRight: 12 }}>{tab.icon}</span>
               {tab.label}

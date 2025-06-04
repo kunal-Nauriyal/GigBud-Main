@@ -520,3 +520,44 @@ export const assignTaskByProvider = async (req, res) => {
     return errorResponse(res, error.message || 'Failed to assign task', 500);
   }
 };
+
+export const rateTask = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { rating, role } = req.body;
+    const { id: taskId } = req.params;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return errorResponse(res, 'Valid rating (1-5) is required', 400);
+    }
+    if (!role || (role !== 'provider' && role !== 'receiver')) {
+      return errorResponse(res, 'Role must be either provider or receiver', 400);
+    }
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return errorResponse(res, 'Task not found', 404);
+    }
+
+    // Only allow the assigned user (receiver) or the creator (provider) to rate
+    const isCreator = compareIds(task.user, userId);
+    const isAssigned = compareIds(task.assignedTo, userId);
+    if (role === 'provider' && !isCreator) {
+      return errorResponse(res, 'Only the provider can rate as provider', 403);
+    }
+    if (role === 'receiver' && !isAssigned) {
+      return errorResponse(res, 'Only the assigned user can rate as receiver', 403);
+    }
+
+    if (role === 'provider') {
+      task.creatorRating = rating;
+    } else if (role === 'receiver') {
+      task.workerRating = rating;
+    }
+    await task.save();
+    return successResponse(res, 'Rating saved successfully', 200, task);
+  } catch (error) {
+    console.error('Error rating task:', error);
+    return errorResponse(res, error.message || 'Failed to rate task', 500);
+  }
+};
