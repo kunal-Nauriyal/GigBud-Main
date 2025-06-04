@@ -294,7 +294,7 @@ export const getAvailableTasks = async (_req, res) => {
 
 export const getTasksByProvider = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedTo: req.user?.id })
+    const tasks = await Task.find({ user: req.user?.id })
       .sort({ createdAt: -1 })
       .populate('user', 'name email phone image rating');
 
