@@ -104,10 +104,10 @@ export const listTasks = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate({
         path: 'applicants.user',
-        select: 'name email phone image rating'
+        select: 'name email phone image rating avatar profilePictureUrl photo profilePicture'
       })
-      .populate('assignedTo', 'name email phone image rating')
-      .populate('user', 'name email phone image rating');
+      .populate('assignedTo', 'name email phone image rating avatar profilePictureUrl photo profilePicture')
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Tasks retrieved successfully', 200, tasks);
   } catch (error) {
@@ -121,10 +121,10 @@ export const getTask = async (req, res) => {
     const task = await Task.findById(req.params.id)
       .populate({
         path: 'applicants.user',
-        select: 'name email phone image rating'
+        select: 'name email phone image rating avatar profilePictureUrl photo profilePicture'
       })
-      .populate('assignedTo', 'name email phone image rating')
-      .populate('user', 'name email phone image rating');
+      .populate('assignedTo', 'name email phone image rating avatar profilePictureUrl photo profilePicture')
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     if (!task) {
       console.log('Task not found:', req.params.id);
@@ -283,7 +283,7 @@ export const getAvailableTasks = async (_req, res) => {
   try {
     const tasks = await Task.find({ assignedTo: null, status: 'pending' })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email phone image rating');
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Available tasks retrieved', 200, tasks);
   } catch (error) {
@@ -296,7 +296,7 @@ export const getTasksByProvider = async (req, res) => {
   try {
     const tasks = await Task.find({ user: req.user?.id })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email phone image rating');
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Tasks retrieved for provider', 200, tasks);
   } catch (error) {
@@ -416,7 +416,7 @@ export const getAppliedTasks = async (req, res) => {
     const userId = req.user?.id;
     const tasks = await Task.find({ 'applicants.user': userId })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email phone image rating');
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Applied tasks retrieved', 200, tasks);
   } catch (error) {
@@ -429,7 +429,7 @@ export const getSavedTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ savedBy: req.user?.id })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email phone image rating');
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Saved tasks retrieved', 200, tasks);
   } catch (error) {
@@ -445,7 +445,7 @@ export const getOngoingTasks = async (req, res) => {
       status: { $in: ['in-progress', 'accepted'] }
     })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email phone image rating');
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Ongoing tasks retrieved', 200, tasks);
   } catch (error) {
@@ -461,7 +461,7 @@ export const getCompletedTasks = async (req, res) => {
       status: 'completed'
     })
       .sort({ createdAt: -1 })
-      .populate('user', 'name email phone image rating');
+      .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
 
     return successResponse(res, 'Completed tasks retrieved', 200, tasks);
   } catch (error) {

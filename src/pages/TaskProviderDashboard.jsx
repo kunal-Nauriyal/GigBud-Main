@@ -36,6 +36,7 @@ const TaskProviderDashboard = () => {
   const [currentRating, setCurrentRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
+  const [isPolling, setIsPolling] = useState(false);
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -78,6 +79,16 @@ const TaskProviderDashboard = () => {
     fetchUserProfile();
   }, [isLoggedIn, navigate, activeTab, taskCreated, user, initialCheckDone]);
 
+  // Polling effect to refresh tasks every 5 seconds
+  useEffect(() => {
+    if (!initialCheckDone || !isLoggedIn) return;
+    const interval = setInterval(() => {
+      setIsPolling(true);
+      fetchTasks().finally(() => setIsPolling(false));
+    }, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, [activeTab, user, initialCheckDone, isLoggedIn]);
+
   const fetchTasks = async () => {
     try {
       setLoading(true);
@@ -85,6 +96,7 @@ const TaskProviderDashboard = () => {
       const response = await taskAPI.getProviderTasks();
       if (response.success) {
         let filteredTasks = response.data || [];
+        console.log('DEBUG: Full task response:', JSON.stringify(filteredTasks, null, 2));
         switch (activeTab) {
           case 'posted':
             filteredTasks = filteredTasks.filter(task =>
@@ -155,7 +167,7 @@ const TaskProviderDashboard = () => {
       console.log('Response from /api/users/me:', res.data);
       
       if (!res.data || !res.data.success) {
-        throw new Error('Invalid API response structure');
+        throw new Error('Invalid API response');
       }
 
       const apiUser = res.data.data;
@@ -270,6 +282,18 @@ const TaskProviderDashboard = () => {
   };
 
   const handleViewProfile = (applicant) => {
+    console.log('=== DEBUG: Viewing profile for applicant ===');
+    console.log('Full applicant object:', applicant);
+    console.log('Applicant user object:', applicant.user);
+    console.log('Available image URLs:');
+    console.log('- applicant.user?.avatar:', applicant.user?.avatar);
+    console.log('- applicant.user?.profilePictureUrl:', applicant.user?.profilePictureUrl);
+    console.log('- applicant.user?.photo:', applicant.user?.photo);
+    console.log('- applicant.user?.profilePicture:', applicant.user?.profilePicture);
+    console.log('- applicant.avatar:', applicant.avatar);
+    console.log('- applicant.profilePictureUrl:', applicant.profilePictureUrl);
+    console.log('==========================================');
+    
     setViewingProfile(applicant);
   };
 
@@ -738,7 +762,7 @@ const TaskProviderDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {loading && <div className="loading-overlay">Loading...</div>}
+      {loading && !isPolling && <div className="loading-overlay">Loading...</div>}
       {error && <div className="error-message">{error}</div>}
 
       <div className="sidebar">
@@ -915,42 +939,64 @@ const TaskProviderDashboard = () => {
                         </div>
                       </div>
                     ) : (
-                      getApplicantsForTask(selectedTask._id).map(applicant => (
-                        <div key={applicant._id} className="applicant-card">
-                          <img 
-                            src={applicant.user?.profilePictureUrl || DEFAULT_PROFILE_IMAGE}
-                            alt="Applicant's profile picture"
-                            className="applicant-image"
-                            onError={(e) => {
-                              e.target.src = DEFAULT_PROFILE_IMAGE;
-                            }}
-                          />
-                          <div className="applicant-info">
-                            <h4>{applicant.user?.name || 'Unnamed User'}</h4>
-                            <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
-                          </div>
-                          <div className="applicant-actions">
-                            <button
-                              className="secondary-button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewProfile(applicant);
+                      getApplicantsForTask(selectedTask._id).map(applicant => {
+                        console.log('Rendering applicant card for:', applicant);
+                        const userData = applicant.user || applicant; // Fallback to applicant if user is not nested
+                        const imageUrl = userData.avatar ||
+                                        userData.profilePictureUrl ||
+                                        userData.photo ||
+                                        userData.profilePicture ||
+                                        DEFAULT_PROFILE_IMAGE;
+                        
+                        console.log('Using image URL:', imageUrl);
+                        
+                        return (
+                          <div key={applicant._id} className="applicant-card">
+                            <img 
+                              src={imageUrl}
+                              alt="Applicant's profile picture"
+                              className="applicant-image"
+                              style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                objectFit: 'cover'
                               }}
-                            >
-                              View Profile
-                            </button>
-                            <button
-                              className="primary-button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAssignTask(selectedTask._id, applicant.user._id);
+                              onError={(e) => {
+                                console.log('Applicant card image failed to load:', e.target.src);
+                                e.target.src = DEFAULT_PROFILE_IMAGE;
                               }}
-                            >
-                              Assign To
-                            </button>
+                              onLoad={() => {
+                                console.log('Applicant card image loaded successfully:', imageUrl);
+                              }}
+                            />
+                            <div className="applicant-info">
+                              <h4>{userData.name || 'Unnamed User'}</h4>
+                              <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                            </div>
+                            <div className="applicant-actions">
+                              <button
+                                className="secondary-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProfile(applicant);
+                                }}
+                              >
+                                View Profile
+                              </button>
+                              <button
+                                className="primary-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssignTask(selectedTask._id, userData._id || applicant._id);
+                                }}
+                              >
+                                Assign To
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -977,37 +1023,150 @@ const TaskProviderDashboard = () => {
         <div className="modal-overlay" onClick={() => setViewingProfile(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setViewingProfile(null)}>×</button>
-            <h2>{viewingProfile.user?.name || 'Applicant Profile'}</h2>
-            <div className="profile-details">
-              <img 
-                src={viewingProfile.user?.profilePictureUrl || DEFAULT_PROFILE_IMAGE}
-                alt="Profile" 
-                className="profile-image" 
-                onError={(e) => {
-                  e.target.src = DEFAULT_PROFILE_IMAGE;
-                }}
-              />
-              <div className="profile-field">
-                <label>Email:</label>
-                <span>{viewingProfile.user?.email || 'Not available'}</span>
-              </div>
-              <div className="profile-field">
-                <label>Rating:</label>
-                <span>{viewingProfile.rating || 'No rating'} ⭐</span>
-              </div>
-              {viewingProfile.user?.phone && (
-                <div className="profile-field">
-                  <label>Phone:</label>
-                  <span>{viewingProfile.user.phone}</span>
-                </div>
-              )}
-              {viewingProfile.user?.skills && (
-                <div className="profile-field">
-                  <label>Skills:</label>
-                  <span>{Array.isArray(viewingProfile.user.skills) ? viewingProfile.user.skills.join(", ") : viewingProfile.user.skills}</span>
-                </div>
-              )}
-            </div>
+            {console.log('DEBUG: Rendering View Profile modal with viewingProfile:', viewingProfile)}
+            {(() => {
+              const userData = viewingProfile.user || viewingProfile; // Fallback to viewingProfile if user is not nested
+              return (
+                <>
+                  <h2>{userData.name || 'Applicant Profile'}</h2>
+                  <div className="profile-details">
+                    <div className="profile-image-section">
+                      <img 
+                        src={
+                          userData.avatar ||
+                          userData.profilePictureUrl ||
+                          userData.photo ||
+                          userData.profilePicture ||
+                          DEFAULT_PROFILE_IMAGE
+                        }
+                        alt="Profile" 
+                        className="profile-image" 
+                        style={{
+                          width: '120px',
+                          height: '120px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '3px solid #ddd',
+                          marginBottom: '20px'
+                        }}
+                        onError={(e) => {
+                          console.log('Image failed to load, using default');
+                          e.target.src = DEFAULT_PROFILE_IMAGE;
+                        }}
+                        onLoad={() => {
+                          console.log('Profile image loaded successfully');
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="profile-fields">
+                      <div className="profile-field">
+                        <label>Name:</label>
+                        <span>{userData.name || 'Not available'}</span>
+                      </div>
+                      
+                      <div className="profile-field">
+                        <label>Email:</label>
+                        <span>{userData.email || 'Not available'}</span>
+                      </div>
+                      
+                      <div className="profile-field">
+                        <label>Phone:</label>
+                        <span>{userData.phone || 'Not available'}</span>
+                      </div>
+                      
+                      <div className="profile-field">
+                        <label>Age:</label>
+                        <span>{userData.age || 'Not specified'}</span>
+                      </div>
+                      
+                      <div className="profile-field">
+                        <label>Profession:</label>
+                        <span>{userData.profession || 'Not specified'}</span>
+                      </div>
+                      
+                      <div className="profile-field">
+                        <label>Rating:</label>
+                        <span>
+                          {viewingProfile.rating ? (
+                            <>
+                              {viewingProfile.rating} ⭐
+                              {userData.completedTasks && (
+                                <small> ({userData.completedTasks} tasks completed)</small>
+                              )}
+                            </>
+                          ) : (
+                            'No rating yet'
+                          )}
+                        </span>
+                      </div>
+                      
+                      {userData.skills && userData.skills.length > 0 && (
+                        <div className="profile-field">
+                          <label>Skills:</label>
+                          <span>
+                            {Array.isArray(userData.skills) 
+                              ? userData.skills.join(", ") 
+                              : userData.skills
+                            }
+                          </span>
+                        </div>
+                      )}
+                      
+                      {userData.bio && (
+                        <div className="profile-field">
+                          <label>Bio:</label>
+                          <p>{userData.bio}</p>
+                        </div>
+                      )}
+                      
+                      {userData.experience && (
+                        <div className="profile-field">
+                          <label>Experience:</label>
+                          <span>{userData.experience}</span>
+                        </div>
+                      )}
+                      
+                      {userData.location && (
+                        <div className="profile-field">
+                          <label>Location:</label>
+                          <span>{renderLocation(userData.location)}</span>
+                        </div>
+                      )}
+                      
+                      {viewingProfile.appliedAt && (
+                        <div className="profile-field">
+                          <label>Applied On:</label>
+                          <span>{new Date(viewingProfile.appliedAt).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}</span>
+                        </div>
+                      )}
+                      
+                      {viewingProfile.coverLetter && (
+                        <div className="profile-field">
+                          <label>Cover Letter:</label>
+                          <p>{viewingProfile.coverLetter}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="profile-modal-actions">
+                    <button 
+                      className="primary-button"
+                      onClick={() => setViewingProfile(null)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
