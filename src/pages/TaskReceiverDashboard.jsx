@@ -49,7 +49,19 @@ const TaskReceiverDashboard = () => {
       return;
     }
 
-    fetchTasks();
+    // Fetch applied tasks first to ensure appliedTasks state is always up-to-date
+    const fetchAppliedTasks = async () => {
+      try {
+        const response = await taskAPI.getAppliedTasks();
+        if (response.success) {
+          setAppliedTasks(new Set(response.data.map(task => task._id)));
+        }
+      } catch (err) {
+        console.error('Failed to fetch applied tasks:', err);
+      }
+    };
+
+    fetchAppliedTasks().then(() => fetchTasks());
   }, [isLoggedIn, navigate, activeTab, location]);
 
   const fetchTasks = async () => {
@@ -72,7 +84,6 @@ const TaskReceiverDashboard = () => {
           break;
         case 'applied':
           response = await taskAPI.getAppliedTasks();
-          setAppliedTasks(new Set(response.data.map(task => task._id)));
           break;
         case 'saved':
           response = await taskAPI.getSavedTasks();
@@ -524,7 +535,7 @@ const TaskReceiverDashboard = () => {
           </div>
         ))
       ) : (
-        <p className="no-tasks-message">No saved tasks yet.</p>
+        <p className="no-tasks-message">No saved tasks.</p>
       )}
     </div>
   );
@@ -539,8 +550,8 @@ const TaskReceiverDashboard = () => {
             onClick={() => handleTaskClick(task)}
           >
             <div className="task-title-row">
-              <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
-              <span className="task-status-badge inprogress">In Progress</span>
+              <span className="task-title">{task.title || task.jobType || 'Untitled Task'}</span>
+            <span className="task-status-badge inprogress">In Progress</span>
             </div>
             <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
@@ -608,7 +619,7 @@ const TaskReceiverDashboard = () => {
           </div>
         ))
       ) : (
-        <p className="no-tasks-message">No completed tasks yet.</p>
+        <p className='no-tasks-message'>No completed tasks yet.</p>
       )}
     </div>
   );
@@ -749,7 +760,7 @@ const TaskReceiverDashboard = () => {
                   <div className="filter-label">
                     <span className="filter-icon">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        <path d="M21 21l-6-6m2-5a7 0 11-14 0 7 7 0 0114 0z"/>
                       </svg>
                     </span>
                     <span>Filter by Type</span>
@@ -761,7 +772,7 @@ const TaskReceiverDashboard = () => {
                       className="filter-select"
                     >
                       <option value="all">All Types</option>
-                      <option value="normal">Regular</option>
+                      <option value="normal">Normal</option>
                       <option value="timebuyer">One-Time</option>
                       <option value="recurring">Recurring</option>
                     </select>
@@ -775,7 +786,7 @@ const TaskReceiverDashboard = () => {
                   <div className="filter-label">
                     <span className="filter-icon">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                        <path d="M12 2C8.13 2 5.13 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                       </svg>
                     </span>
                     <span>Location</span>
