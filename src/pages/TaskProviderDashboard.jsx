@@ -139,16 +139,27 @@ const TaskProviderDashboard = () => {
 
   const calculateAverageRating = (tasks) => {
     const completedTasks = tasks.filter(task => task.status === 'completed');
+    
     if (completedTasks.length === 0) {
       setAverageRating(0);
       return;
     }
 
-    const totalRatings = completedTasks.reduce((sum, task) => {
+    // Count tasks with ratings
+    const ratedTasks = completedTasks.filter(task => task.creatorRating && task.creatorRating > 0);
+    
+    if (ratedTasks.length === 0) {
+      setAverageRating(0);
+      return;
+    }
+
+    // Calculate average of rated tasks
+    const totalRatings = ratedTasks.reduce((sum, task) => {
       return sum + (task.creatorRating || 0);
     }, 0);
 
-    setAverageRating((totalRatings / completedTasks.length).toFixed(1));
+    const avgRating = (totalRatings / ratedTasks.length).toFixed(1);
+    setAverageRating(avgRating);
   };
 
   const fetchUserProfile = async () => {
@@ -310,42 +321,32 @@ const TaskProviderDashboard = () => {
     }
 
     try {
-      // Optimistically update the UI
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task._id === ratingModalTask._id
-            ? { ...task, creatorRating: currentRating }
-            : task
-        )
-      );
-
+      // Submit rating first
       await taskAPI.rateTask(ratingModalTask._id, currentRating, 'provider');
-      toast.success('Rating submitted successfully');
       
-      // Recalculate average rating
+      // Update tasks state with new rating
       const updatedTasks = tasks.map(task =>
         task._id === ratingModalTask._id
           ? { ...task, creatorRating: currentRating }
           : task
       );
+      
+      setTasks(updatedTasks);
+      
+      // Recalculate average rating with updated tasks
       calculateAverageRating(updatedTasks);
-
+      
+      toast.success('Rating submitted successfully');
       setRatingModalTask(null);
       setCurrentRating(0);
       setHoverRating(0);
+      
+      // Refresh tasks to ensure we have the latest data
+      fetchTasks();
     } catch (err) {
       console.error('Rating submission error:', err);
       const errorMsg = err.response?.data?.message || err.message || 'Failed to submit rating';
       toast.error(errorMsg);
-      
-      // Revert optimistic update if there was an error
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task._id === ratingModalTask._id
-            ? { ...task, creatorRating: ratingModalTask.creatorRating }
-            : task
-        )
-      );
     }
   };
 
@@ -709,10 +710,14 @@ const TaskProviderDashboard = () => {
                 <span>
                   {averageRating > 0 ? (
                     <>
-                      {renderStarRating(averageRating)}
-                      ({averageRating}/5 from {tasks.filter(t => t.status === 'completed' && t.creatorRating).length} tasks)
+                      {renderStarRating(parseFloat(averageRating))}
+                      ({averageRating}/5 from {tasks.filter(t => t.status === 'completed' && t.creatorRating && t.creatorRating > 0).length} rated tasks out of {tasks.filter(t => t.status === 'completed').length} total completed tasks)
                     </>
-                  ) : 'No ratings yet'}
+                  ) : tasks.filter(t => t.status === 'completed').length > 0 ? (
+                    `No ratings yet (${tasks.filter(t => t.status === 'completed').length} completed tasks)`
+                  ) : (
+                    'No completed tasks yet'
+                  )}
                 </span>
               </div>
             </div>
@@ -1032,13 +1037,7 @@ const TaskProviderDashboard = () => {
                   <div className="profile-details">
                     <div className="profile-image-section">
                       <img 
-                        src={
-                          userData.avatar ||
-                          userData.profilePictureUrl ||
-                          userData.photo ||
-                          userData.profilePicture ||
-                          DEFAULT_PROFILE_IMAGE
-                        }
+                        src={userData.avatar || userData.profilePictureUrl || userData.photo || userData.profilePicture || DEFAULT_PROFILE_IMAGE}
                         alt="Profile" 
                         className="profile-image" 
                         style={{
