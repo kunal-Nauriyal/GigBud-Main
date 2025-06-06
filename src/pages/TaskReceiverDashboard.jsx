@@ -23,6 +23,7 @@ const TaskReceiverDashboard = () => {
   });
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,6 +50,11 @@ const TaskReceiverDashboard = () => {
       return;
     }
 
+    // Auto-reload every 5 seconds
+    const interval = setInterval(() => {
+      fetchTasks();
+    }, 5000);
+
     // Fetch applied tasks first to ensure appliedTasks state is always up-to-date
     const fetchAppliedTasks = async () => {
       try {
@@ -62,6 +68,9 @@ const TaskReceiverDashboard = () => {
     };
 
     fetchAppliedTasks().then(() => fetchTasks());
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, [isLoggedIn, navigate, activeTab, location]);
 
   const fetchTasks = async () => {
@@ -117,6 +126,7 @@ const TaskReceiverDashboard = () => {
       }
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -395,7 +405,7 @@ const TaskReceiverDashboard = () => {
                 {getLocationDisplay(task)}
               </span>
             </div>
-            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-desc" style={{ color: 'black' }}>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
               <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
               <span>Budget: <b>{renderTaskBudget(task)}</b></span>
@@ -454,7 +464,7 @@ const TaskReceiverDashboard = () => {
                 {task.status === 'in-progress' ? 'In Progress' : 'Awaiting Approval'}
               </span>
             </div>
-            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-desc" style={{ color: 'black' }}>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
               <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
               <span>Budget: <b>{renderTaskBudget(task)}</b></span>
@@ -512,7 +522,7 @@ const TaskReceiverDashboard = () => {
               <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
               <span className="task-status-badge saved">Saved</span>
             </div>
-            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-desc" style={{ color: 'black' }}>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
               <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
               <span>Budget: <b>{renderTaskBudget(task)}</b></span>
@@ -551,9 +561,9 @@ const TaskReceiverDashboard = () => {
           >
             <div className="task-title-row">
               <span className="task-title">{task.title || task.jobType || 'Untitled Task'}</span>
-            <span className="task-status-badge inprogress">In Progress</span>
+              <span className="task-status-badge inprogress">In Progress</span>
             </div>
-            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-desc" style={{ color: 'black' }}>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
               <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
               <span>Budget: <b>{renderTaskBudget(task)}</b></span>
@@ -591,7 +601,7 @@ const TaskReceiverDashboard = () => {
               <span className="task-title">{task.title || task.jobType || "Untitled Task"}</span>
               <span className="task-status-badge completed">Completed</span>
             </div>
-            <div className="task-desc">{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
+            <div className="task-desc" style={{ color: 'black' }}>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
               <span>Type: <b>{task.taskType === 'timebuyer' ? 'Time-Based' : 'Regular'}</b></span>
               <span>Budget: <b>{renderTaskBudget(task)}</b></span>
@@ -619,7 +629,7 @@ const TaskReceiverDashboard = () => {
           </div>
         ))
       ) : (
-        <p className='no-tasks-message'>No completed tasks yet.</p>
+        <p className="no-tasks-message">No completed tasks yet.</p>
       )}
     </div>
   );
@@ -648,7 +658,7 @@ const TaskReceiverDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {loading && <div className="loading-overlay">Loading...</div>}
+      {loading && isInitialLoad && <div className="loading-overlay">Loading...</div>}
       {error && <div className="error-message">{error}</div>}
 
       {/* Sidebar */}
@@ -864,7 +874,7 @@ const TaskReceiverDashboard = () => {
             <div className="task-details-content">
               <div className="task-details-section">
                 <h3>Description</h3>
-                <p>{selectedTask.description || "No description available"}</p>
+                <p style={{ color: 'black' }}>{selectedTask.description || "No description available"}</p>
               </div>
               
               <div className="task-details-section">
