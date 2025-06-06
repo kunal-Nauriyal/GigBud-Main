@@ -10,17 +10,6 @@ import axios from 'axios';
 
 const DEFAULT_PROFILE_IMAGE = 'https://img.freepik.com/premium-vector/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-vector-illustration_561158-3383.jpg?w=360';
 
-// Helper function to extract profile image URL
-const getProfileImageUrl = (userData) => {
-  return (
-    userData?.avatar ||
-    userData?.profilePictureUrl ||
-    userData?.photo ||
-    userData?.profilePicture ||
-    DEFAULT_PROFILE_IMAGE
-  );
-};
-
 const TaskProviderDashboard = () => {
   const navigate = useNavigate();
   const { isLoggedIn, user, initialCheckDone } = useAuth();
@@ -522,27 +511,12 @@ const TaskProviderDashboard = () => {
               key={task._id}
               className="task-card"
               onClick={() => handleTaskClick(task)}
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              style={{ cursor: 'pointer' }}
             >
-              <img
-                src={getProfileImageUrl(providerProfile)}
-                alt="Provider"
-                className="task-card-image"
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginRight: '10px',
-                }}
-                onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
-              />
-              <div style={{ flex: 1 }}>
-                <h3>{getTaskDisplayTitle(task)}</h3>
-                <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-                <p>Applicants: {task.applicants?.length || 0}</p>
-              </div>
+              <h3>{getTaskDisplayTitle(task)}</h3>
+              <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
+              <p>Applicants: {task.applicants?.length || 0}</p>
             </div>
           ))
         ) : (
@@ -562,48 +536,33 @@ const TaskProviderDashboard = () => {
               key={task._id}
               className="task-card"
               onClick={() => handleTaskClick(task)}
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              style={{ cursor: 'pointer' }}
             >
-              <img
-                src={getProfileImageUrl(task.assignedTo)}
-                alt="Assigned To"
-                className="task-card-image"
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginRight: '10px',
-                }}
-                onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
-              />
-              <div style={{ flex: 1 }}>
-                <h3>{getTaskDisplayTitle(task)}</h3>
-                <p>Assigned to: {task.assignedTo?.name || 'Unknown'}</p>
-                <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-                {task.status === 'accepted' && (
-                  <button
-                    className="primary-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMarkComplete(task._id);
-                    }}
-                  >
-                    Mark as Complete
-                  </button>
-                )}
-                {task.status === 'awaiting-approval' && (
-                  <button
-                    className="primary-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleApproveCompletion(task._id);
-                    }}
-                  >
-                    Approve Completion
-                  </button>
-                )}
-              </div>
+              <h3>{getTaskDisplayTitle(task)}</h3>
+              <p>Assigned to: {task.assignedTo?.name || 'Unknown'}</p>
+              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
+              {task.status === 'accepted' && (
+                <button
+                  className="primary-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMarkComplete(task._id);
+                  }}
+                >
+                  Mark as Complete
+                </button>
+              )}
+              {task.status === 'awaiting-approval' && (
+                <button
+                  className="primary-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApproveCompletion(task._id);
+                  }}
+                >
+                  Approve Completion
+                </button>
+              )}
             </div>
           ))
         ) : (
@@ -623,46 +582,31 @@ const TaskProviderDashboard = () => {
               key={task._id}
               className="task-card"
               onClick={() => handleTaskClick(task)}
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              style={{ cursor: 'pointer' }}
             >
-              <img
-                src={getProfileImageUrl(task.completedBy || task.assignedTo)}
-                alt="Completed By"
-                className="task-card-image"
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginRight: '10px',
-                }}
-                onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
-              />
-              <div style={{ flex: 1 }}>
-                <h3>{getTaskDisplayTitle(task)}</h3>
-                <p>Completed by: {task.assignedTo?.name || task.completedBy?.name || 'Unknown'}</p>
-                <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-                <div className="task-rating prominent-rating">
-                  <h4>Your Rating:</h4>
-                  {task.creatorRating ? (
-                    <div className="existing-rating">
-                      {renderStarRating(task.creatorRating)}
-                    </div>
-                  ) : (
-                    <div className="no-rating">
-                      <p>Not yet rated</p>
-                      <button
-                        className="primary-button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGiveRating(task);
-                        }}
-                      >
-                        Rate Task
-                      </button>
-                    </div>
-                  )}
-                </div>
+              <h3>{getTaskDisplayTitle(task)}</h3>
+              <p>Completed by: {task.assignedTo?.name || task.completedBy?.name || 'Unknown'}</p>
+              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
+              <div className="task-rating prominent-rating">
+                <h4>Your Rating:</h4>
+                {task.creatorRating ? (
+                  <div className="existing-rating">
+                    {renderStarRating(task.creatorRating)}
+                  </div>
+                ) : (
+                  <div className="no-rating">
+                    <p>Not yet rated</p>
+                    <button
+                      className="primary-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGiveRating(task);
+                      }}
+                    >
+                      Rate Task
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))
@@ -965,10 +909,30 @@ const TaskProviderDashboard = () => {
                     {selectedTask.status === 'completed' ? (
                       <div className="applicant-card">
                         <img 
-                          src={getProfileImageUrl(selectedTask.completedBy || selectedTask.assignedTo)}
+                          src={selectedTask.completedBy?.avatar || 
+                               selectedTask.completedBy?.profilePictureUrl || 
+                               selectedTask.completedBy?.photo || 
+                               selectedTask.completedBy?.profilePicture || 
+                               selectedTask.assignedTo?.avatar || 
+                               selectedTask.assignedTo?.profilePictureUrl || 
+                               selectedTask.assignedTo?.photo || 
+                               selectedTask.assignedTo?.profilePicture || 
+                               DEFAULT_PROFILE_IMAGE}
                           alt="Completed by"
                           className="applicant-image"
-                          onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '50%',
+                            objectFit: 'cover'
+                          }}
+                          onError={(e) => {
+                            console.log('Completed by image failed to load:', e.target.src);
+                            e.target.src = DEFAULT_PROFILE_IMAGE;
+                          }}
+                          onLoad={() => {
+                            console.log('Completed by image loaded successfully');
+                          }}
                         />
                         <div className="applicant-info">
                           <h4>{selectedTask.completedBy?.name || selectedTask.assignedTo?.name || 'Unnamed User'}</h4>
@@ -983,10 +947,26 @@ const TaskProviderDashboard = () => {
                     ) : selectedTask.status === 'accepted' && selectedTask.assignedTo ? (
                       <div className="applicant-card">
                         <img 
-                          src={getProfileImageUrl(selectedTask.assignedTo)}
+                          src={selectedTask.assignedTo.avatar || 
+                               selectedTask.assignedTo.profilePictureUrl || 
+                               selectedTask.assignedTo.photo || 
+                               selectedTask.assignedTo.profilePicture || 
+                               DEFAULT_PROFILE_IMAGE}
                           alt="Assigned applicant"
                           className="applicant-image"
-                          onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '50%',
+                            objectFit: 'cover'
+                          }}
+                          onError={(e) => {
+                            console.log('Assigned applicant image failed to load:', e.target.src);
+                            e.target.src = DEFAULT_PROFILE_IMAGE;
+                          }}
+                          onLoad={() => {
+                            console.log('Assigned applicant image loaded successfully');
+                          }}
                         />
                         <div className="applicant-info">
                           <h4>{selectedTask.assignedTo.name || 'Unnamed User'}</h4>
@@ -999,7 +979,11 @@ const TaskProviderDashboard = () => {
                       getApplicantsForTask(selectedTask._id).map(applicant => {
                         console.log('Rendering applicant card for:', applicant);
                         const userData = applicant.user || applicant; // Fallback to applicant if user is not nested
-                        const imageUrl = getProfileImageUrl(userData);
+                        const imageUrl = userData.avatar ||
+                                        userData.profilePictureUrl ||
+                                        userData.photo ||
+                                        userData.profilePicture ||
+                                        DEFAULT_PROFILE_IMAGE;
                         
                         console.log('Using image URL:', imageUrl);
                         
@@ -1085,7 +1069,7 @@ const TaskProviderDashboard = () => {
                   <div className="profile-details">
                     <div className="profile-image-section">
                       <img 
-                        src={getProfileImageUrl(userData)}
+                        src={userData.avatar || userData.profilePictureUrl || userData.photo || userData.profilePicture || DEFAULT_PROFILE_IMAGE}
                         alt="Profile" 
                         className="profile-image" 
                         style={{
@@ -1136,12 +1120,14 @@ const TaskProviderDashboard = () => {
                         <label>Rating:</label>
                         <span>
                           {viewingProfile.rating ? (
-                            <span>
-                              {viewingProfile.rating} ⭐{' '}
-                              {userData.completedTasks && <small>({userData.completedTasks} tasks completed)</small>}
-                            </span>
+                            <>
+                              {viewingProfile.rating} ⭐
+                              {userData.completedTasks && (
+                                <small> ({userData.completedTasks} tasks completed)</small>
+                              )}
+                            </>
                           ) : (
-                            <span>No rating yet</span>
+                            'No rating yet'
                           )}
                         </span>
                       </div>
