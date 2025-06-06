@@ -251,6 +251,27 @@ export const taskAPI = {
     }
   },
 
+  approveCompletion: async (taskId) => {
+    try {
+      if (!taskId) {
+        return {
+          success: false,
+          message: 'Task ID is required'
+        };
+      }
+
+      const response = await api.put(`/tasks/task/approve/${taskId}`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to approve task completion',
+        error: error.response?.data,
+        statusCode: error.response?.status
+      };
+    }
+  },
+
   completeTask: async (taskId) => {
     try {
       if (!taskId) {
@@ -374,7 +395,7 @@ export const taskAPI = {
         };
       }
 
-      const response = await api.post(`/tasks/task/apply/${taskId}`, data);
+      const response = await api.post(`/tasks/task/apply/${taskId}`,  data);
       return { success: true, data: response.data.data };
     } catch (error) {
       return {

@@ -44,6 +44,8 @@ const TaskProviderDashboard = () => {
         return 'open';
       case 'accepted':
         return 'assigned';
+      case 'ready-for-review':
+        return 'pending approval';
       case 'awaiting-approval':
         return 'pending approval';
       case 'completed':
@@ -112,7 +114,11 @@ const TaskProviderDashboard = () => {
             );
             break;
           case 'ongoing':
-            filteredTasks = filteredTasks.filter(task => task.status === 'accepted' || task.status === 'awaiting-approval');
+            filteredTasks = filteredTasks.filter(task => 
+              task.status === 'accepted' || 
+              task.status === 'awaiting-approval' || 
+              task.status === 'ready-for-review'
+            );
             break;
           case 'completed':
             filteredTasks = filteredTasks.filter(task => task.status === 'completed');
@@ -256,6 +262,7 @@ const TaskProviderDashboard = () => {
       await taskAPI.completeTask(taskId);
       toast.success('Task marked as complete - awaiting your approval');
       setTaskCreated(prev => !prev);
+      await fetchTasks(); // Ensure tasks are refreshed immediately
     } catch (err) {
       toast.error(err.message || 'Failed to update task status');
     }
@@ -263,11 +270,18 @@ const TaskProviderDashboard = () => {
 
   const handleApproveCompletion = async (taskId) => {
     try {
+      setLoading(true);
       await taskAPI.approveCompletion(taskId);
       toast.success('Task completion approved');
       setTaskCreated(prev => !prev);
+      await fetchTasks(); // Refresh tasks to move to completed section
+      if (activeTab === 'ongoing') {
+        setActiveTab('completed'); // Switch to completed tab to show the task
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to approve completion');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -277,6 +291,7 @@ const TaskProviderDashboard = () => {
       toast.success('Task assigned successfully');
       setTaskCreated(prev => !prev);
       setIsModalOpen(false);
+      await fetchTasks(); // Refresh tasks after assignment
     } catch (err) {
       toast.error(err.message || 'Failed to assign task');
     }
@@ -287,6 +302,7 @@ const TaskProviderDashboard = () => {
       await taskAPI.deleteTask(taskId);
       toast.success('Task deleted successfully');
       setTaskCreated(prev => !prev);
+      await fetchTasks(); // Refresh tasks after deletion
     } catch (err) {
       toast.error(err.message || 'Failed to delete task');
     }
@@ -342,7 +358,7 @@ const TaskProviderDashboard = () => {
       setHoverRating(0);
       
       // Refresh tasks to ensure we have the latest data
-      fetchTasks();
+      await fetchTasks();
     } catch (err) {
       console.error('Rating submission error:', err);
       const errorMsg = err.response?.data?.message || err.message || 'Failed to submit rating';
@@ -552,7 +568,7 @@ const TaskProviderDashboard = () => {
                   Mark as Complete
                 </button>
               )}
-              {task.status === 'awaiting-approval' && (
+              {(task.status === 'awaiting-approval' || task.status === 'ready-for-review') && (
                 <button
                   className="primary-button"
                   onClick={(e) => {
@@ -944,7 +960,9 @@ const TaskProviderDashboard = () => {
                           )}
                         </div>
                       </div>
-                    ) : selectedTask.status === 'accepted' && selectedTask.assignedTo ? (
+                    ) : (selectedTask.status === 'accepted' || 
+                         selectedTask.status === 'ready-for-review' || 
+                         selectedTask.status === 'awaiting-approval') && selectedTask.assignedTo ? (
                       <div className="applicant-card">
                         <img 
                           src={selectedTask.assignedTo.avatar || 
@@ -972,7 +990,20 @@ const TaskProviderDashboard = () => {
                           <h4>{selectedTask.assignedTo.name || 'Unnamed User'}</h4>
                           <p>Email: {selectedTask.assignedTo.email || 'Not available'}</p>
                           <p>Phone: {selectedTask.assignedTo.phone || 'Not available'}</p>
-                          <span className="status-badge assigned">Assigned</span>
+                          <span className={`status-badge ${getDisplayStatus(selectedTask.status)}`}>
+                            {getDisplayStatus(selectedTask.status)}
+                          </span>
+                        </div>
+                        <div className="applicant-actions">
+                          <button
+                            className="secondary-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProfile({ user: selectedTask.assignedTo });
+                            }}
+                          >
+                            View Profile
+                          </button>
                         </div>
                       </div>
                     ) : (

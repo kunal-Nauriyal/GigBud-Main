@@ -17,6 +17,7 @@ import {
   markTaskAsOngoing,
   assignTaskByProvider,
   markTaskReadyForCompletion,
+  approveCompletion,
   rateTask
 } from '../controllers/taskController.js';
 
@@ -57,6 +58,9 @@ router.post('/task/mark-ongoing/:id', authMiddleware, markTaskAsOngoing);
 
 // Mark task as ready for completion
 router.post('/task/ready/:id', authMiddleware, markTaskReadyForCompletion);
+
+// Approve task completion
+router.put('/task/approve/:id', authMiddleware, approveCompletion);
 
 // Complete a task
 router.post('/task/complete/:id', authMiddleware, completeTask);

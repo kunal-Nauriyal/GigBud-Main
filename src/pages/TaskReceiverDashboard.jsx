@@ -39,6 +39,7 @@ const TaskReceiverDashboard = () => {
   const [savedTasks, setSavedTasks] = useState(new Set());
   const [ongoingTasks, setOngoingTasks] = useState(new Set());
   const [completedTasks, setCompletedTasks] = useState(new Set());
+  const [pendingReviewTasks, setPendingReviewTasks] = useState(new Set());
   const [ratingModalTask, setRatingModalTask] = useState(null);
   const [currentRating, setCurrentRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -105,6 +106,12 @@ const TaskReceiverDashboard = () => {
         case 'completed':
           response = await taskAPI.getCompletedTasks();
           setCompletedTasks(new Set(response.data.map(task => task._id)));
+          // Remove completed tasks from pending review
+          setPendingReviewTasks(prev => {
+            const newSet = new Set(prev);
+            response.data.forEach(task => newSet.delete(task._id));
+            return newSet;
+          });
           break;
         default:
           response = await taskAPI.getAvailableTasks();
@@ -191,12 +198,10 @@ const TaskReceiverDashboard = () => {
     try {
       setLoading(true);
 
-      // Apply for task if not already applied
-      if (!appliedTasks.has(taskId)) {
-        const applyResponse = await taskAPI.applyForTask(taskId);
-        if (!applyResponse.success && applyResponse.message !== 'You have already applied for this task') {
-          throw new Error(applyResponse.message || 'You must apply before starting the task.');
-        }
+      // Check if the task is assigned (status should be 'accepted')
+      const task = tasks.find(t => t._id === taskId);
+      if (!task || task.status !== 'accepted') {
+        throw new Error('Task must be assigned by provider before marking as ongoing');
       }
 
       // Mark task as ongoing
@@ -263,9 +268,10 @@ const TaskReceiverDashboard = () => {
       setLoading(true);
       const response = await taskAPI.markTaskAsReadyForCompletion(taskId);
       if (response.success) {
+        // Add to pending review tasks instead of removing from ongoing
+        setPendingReviewTasks(prev => new Set(prev).add(taskId));
         toast.success('Task marked as ready for provider review');
         fetchTasks();
-        setActiveTab('ongoing');
       } else {
         throw new Error(response.message || 'Failed to submit completion');
       }
@@ -443,7 +449,7 @@ const TaskReceiverDashboard = () => {
         <p className="no-tasks-message">
           {location 
             ? `No available tasks found in ${location}. Try changing your location.`
-            : 'No available tasks found. Try setting your location.'}
+            : 'No tasks found. Try setting your location.'}
         </p>
       )}
     </div>
@@ -471,7 +477,7 @@ const TaskReceiverDashboard = () => {
               <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
-              {!ongoingTasks.has(task._id) ? (
+              {!ongoingTasks.has(task._id) && task.status === 'accepted' ? (
                 <button
                   className="mark-ongoing"
                   onClick={(e) => {
@@ -486,7 +492,7 @@ const TaskReceiverDashboard = () => {
                   className="mark-ongoing inprogress"
                   disabled
                 >
-                  In Progress ✓
+                  {task.status === 'accepted' ? 'Ready to Start' : 'Waiting for Assignment'}
                 </button>
               )}
               {ongoingTasks.has(task._id) && (
@@ -561,7 +567,9 @@ const TaskReceiverDashboard = () => {
           >
             <div className="task-title-row">
               <span className="task-title">{task.title || task.jobType || 'Untitled Task'}</span>
-              <span className="task-status-badge inprogress">In Progress</span>
+              <span className={`task-status-badge ${pendingReviewTasks.has(task._id) ? 'pending-review' : 'inprogress'}`}>
+                {pendingReviewTasks.has(task._id) ? 'Awaiting Approval' : 'In Progress'}
+              </span>
             </div>
             <div className="task-desc" style={{ color: 'black' }}>{task.description ? task.description.substring(0, 100) + '...' : 'No description available'}</div>
             <div className="task-meta">
@@ -570,15 +578,24 @@ const TaskReceiverDashboard = () => {
               <span>{task.taskType === 'timebuyer' ? 'Time Needed:' : 'Deadline:'} <b>{renderTaskDeadline(task)}</b></span>
             </div>
             <div className="task-actions" onClick={(e) => e.stopPropagation()}>
-              <button
-                className="mark-complete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMarkComplete(task._id);
-                }}
-              >
-                Submit for Review
-              </button>
+              {!pendingReviewTasks.has(task._id) ? (
+                <button
+                  className="mark-complete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMarkComplete(task._id);
+                  }}
+                >
+                  Submit for Review
+                </button>
+              ) : (
+                <button
+                  className="mark-complete pending"
+                  disabled
+                >
+                  Waiting for Approval
+                </button>
+              )}
             </div>
           </div>
         ))
@@ -984,10 +1001,11 @@ const TaskReceiverDashboard = () => {
                   {(appliedTasks.has(selectedTask._id) || ongoingTasks.has(selectedTask._id)) ? 'Applied ✓' : 'Apply'}
                 </button>
               )}
-              {activeTab === 'applied' && selectedTask.status !== 'in-progress' && (
+              {activeTab === 'applied' && selectedTask.status === 'accepted' && (
                 <button
                   className="mark-ongoing"
                   onClick={() => handleMarkOngoing(selectedTask._id)}
+                  disabled={selectedTask.status !== 'accepted'}
                 >
                   Mark as Ongoing
                 </button>

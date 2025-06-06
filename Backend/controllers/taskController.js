@@ -233,6 +233,35 @@ export const markTaskReadyForCompletion = async (req, res) => {
   }
 };
 
+export const approveCompletion = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return errorResponse(res, 'Task not found', 404);
+    }
+
+    const userId = req.user?.id;
+    const isCreator = compareIds(task.user, userId);
+
+    if (!isCreator) {
+      return errorResponse(res, 'Only the task creator can approve completion', 403);
+    }
+
+    // Only allow approval from specific states
+    if (!['ready-for-review', 'awaiting-approval'].includes(task.status)) {
+      return errorResponse(res, `Task cannot be approved from ${task.status} state`, 400);
+    }
+
+    task.status = 'completed';
+    await task.save();
+
+    return successResponse(res, 'Task completion approved', 200, task);
+  } catch (error) {
+    console.error('Error approving completion:', error);
+    return errorResponse(res, error.message || 'Failed to approve completion', 500);
+  }
+};
+
 export const completeTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -442,7 +471,7 @@ export const getOngoingTasks = async (req, res) => {
   try {
     const tasks = await Task.find({
       assignedTo: req.user?.id,
-      status: { $in: ['in-progress', 'accepted'] }
+      status: { $in: ['in-progress', 'accepted', 'ready-for-review', 'awaiting-approval'] }
     })
       .sort({ createdAt: -1 })
       .populate('user', 'name email phone image rating avatar profilePictureUrl photo profilePicture');
