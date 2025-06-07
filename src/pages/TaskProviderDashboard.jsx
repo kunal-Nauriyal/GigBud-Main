@@ -37,6 +37,7 @@ const TaskProviderDashboard = () => {
   const [hoverRating, setHoverRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
   const [isPolling, setIsPolling] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -101,17 +102,18 @@ const TaskProviderDashboard = () => {
         console.log('DEBUG: Full task response:', JSON.stringify(filteredTasks, null, 2));
         switch (activeTab) {
           case 'posted':
-            filteredTasks = filteredTasks.filter(task =>
-              [
-                'pending',
-                'applied',
-                'accepted',
-                'in-progress',
-                'ready-for-review',
-                'completed',
-                'awaiting-approval'
-              ].includes(task.status)
-            );
+            // TEMP: Show all tasks for debugging
+            // filteredTasks = filteredTasks.filter(task =>
+            //   [
+            //     'pending',
+            //     'applied',
+            //     'accepted',
+            //     'in-progress',
+            //     'ready-for-review',
+            //     'completed',
+            //     'awaiting-approval'
+            //   ].includes(task.status)
+            // );
             break;
           case 'ongoing':
             filteredTasks = filteredTasks.filter(task => 
@@ -517,30 +519,33 @@ const TaskProviderDashboard = () => {
     </>
   );
 
-  const renderPostedTasks = () => (
-    <div className="panel-content">
-      <h2>My Posted Tasks</h2>
-      <div className="task-list">
-        {tasks.length > 0 ? (
-          tasks.map(task => (
-            <div
-              key={task._id}
-              className="task-card"
-              onClick={() => handleTaskClick(task)}
-              style={{ cursor: 'pointer' }}
-            >
-              <h3>{getTaskDisplayTitle(task)}</h3>
-              <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-              <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
-              <p>Applicants: {task.applicants?.length || 0}</p>
-            </div>
-          ))
-        ) : (
-          <p>No tasks found. Create a new task to get started.</p>
-        )}
+  const renderPostedTasks = () => {
+    console.log('DEBUG: tasks in renderPostedTasks:', tasks);
+    return (
+      <div className="panel-content">
+        <h2>My Posted Tasks</h2>
+        <div className="task-list">
+          {tasks.length > 0 ? (
+            tasks.map(task => (
+              <div
+                key={task._id}
+                className="task-card"
+                onClick={() => handleTaskClick(task)}
+                style={{ cursor: 'pointer' }}
+              >
+                <h3>{getTaskDisplayTitle(task)}</h3>
+                <p>Posted: {new Date(task.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                <span className={`status-badge ${getDisplayStatus(task.status)}`}>{getDisplayStatus(task.status)}</span>
+                <p>Applicants: {task.applicants?.length || 0}</p>
+              </div>
+            ))
+          ) : (
+            <p>No tasks found. Create a new task to get started.</p>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderOngoingTasks = () => (
     <div className="panel-content">
@@ -775,6 +780,7 @@ const TaskProviderDashboard = () => {
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
     localStorage.setItem('providerActiveTab', tabKey);
+    setSidebarOpen(false);
   };
 
   if (!initialCheckDone) {
@@ -786,7 +792,8 @@ const TaskProviderDashboard = () => {
       {loading && !isPolling && <div className="loading-overlay">Loading...</div>}
       {error && <div className="error-message">{error}</div>}
 
-      <div className="sidebar">
+      {/* Sidebar */}
+      <div className={`sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="sidebar-header">
           <h1>Task Provider</h1>
         </div>
@@ -823,10 +830,19 @@ const TaskProviderDashboard = () => {
           </button>
         </nav>
       </div>
-      
+
+      {/* Overlay for mobile when sidebar is open */}
+      <div className={`sidebar-overlay${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)}></div>
+
+      {/* Main content */}
       <main className="main-content">
         {renderMainContent()}
       </main>
+
+      {/* Sidebar toggle button (mobile only) */}
+      <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        {sidebarOpen ? '← Close Menu' : '☰ Menu'}
+      </button>
 
       {isModalOpen && selectedTask && (
         <div className="modal-overlay" onClick={handleCloseModal}>

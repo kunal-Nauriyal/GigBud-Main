@@ -43,6 +43,7 @@ const TaskReceiverDashboard = () => {
   const [ratingModalTask, setRatingModalTask] = useState(null);
   const [currentRating, setCurrentRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -679,7 +680,7 @@ const TaskReceiverDashboard = () => {
       {error && <div className="error-message">{error}</div>}
 
       {/* Sidebar */}
-      <div className="gigbud-sidebar">
+      <div className={`gigbud-sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="sidebar-header">
           <h1>Task Receiver</h1>
           <p>Welcome, {user?.name || 'User'}!</p>
@@ -717,6 +718,9 @@ const TaskReceiverDashboard = () => {
         </div>
       </div>
 
+      {/* Overlay for mobile when sidebar is open */}
+      <div className={`sidebar-overlay${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)}></div>
+
       {/* Main content */}
       <main className="gigbud-main">
         <div className="gigbud-panel">
@@ -740,6 +744,11 @@ const TaskReceiverDashboard = () => {
           {renderMainContent()}
         </div>
       </main>
+
+      {/* Sidebar toggle button (mobile only) */}
+      <button className="sidebar-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        {sidebarOpen ? '← Close Menu' : '☰ Menu'}
+      </button>
 
       {/* Filter Modal */}
       {showFilterModal && (
