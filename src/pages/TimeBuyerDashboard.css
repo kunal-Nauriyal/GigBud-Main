@@ -273,20 +273,32 @@
     }
 
     .task-list {
-        position: fixed;
+        /* position: fixed; */
         left: 0;
         top: 0;
         height: 100%;
-        width: 80%;
-        max-width: 300px;
+        width: 100%;
+        /* max-width: 300px; */
         z-index: 50;
-        transform: translateX(-100%);
+        /* transform: translateX(-100%); */
         transition: transform 0.3s ease;
     }
-
+    .task-card{
+        display: block;
+    }
+    .task-card .status-badge {
+        margin-left: 0rem;
+    }
     .task-list.show {
         transform: translateX(0);
         padding-top: 84px;
+    }
+    .applicant-actions{
+        display: block;
+      
+    }
+    .applicant-card {
+        display: block;
     }
 
     .task-list.hide {
@@ -322,6 +334,36 @@
     .task-details {
         width: 60%;
     }
+    
+    .task-list {
+        /* position: fixed; */
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        /* max-width: 300px; */
+        z-index: 50;
+        /* transform: translateX(-100%); */
+        transition: transform 0.3s ease;
+    }
+    .task-card{
+        display: block;
+    }
+    .task-card .status-badge {
+        margin-left: 0rem;
+    }
+    .task-list.show {
+        transform: translateX(0);
+        padding-top: 84px;
+    }
+    .applicant-actions{
+        display: block;
+      
+    }
+    .applicant-card {
+        display: block;
+    }
+
 }
 
 /* Animations */
