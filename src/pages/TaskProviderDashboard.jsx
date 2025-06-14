@@ -328,7 +328,7 @@ const TaskProviderDashboard = () => {
 
   const handleGiveRating = (task) => {
     setRatingModalTask(task);
-    setCurrentRating(task.creatorRating || task.workerRating || 0);
+    setCurrentRating(0); // Always start with 0, don't pre-fill
     setHoverRating(0);
   };
 
@@ -487,17 +487,23 @@ const TaskProviderDashboard = () => {
     setEditProviderMode(false);
   };
 
-  const renderStarRating = (rating) => {
+  const renderStarRating = (rating, isInteractive = false) => {
     const stars = [];
+    const displayRating = isInteractive ? (hoverRating || currentRating) : rating;
+    
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <span
           key={i}
-          className={`star${i <= (hoverRating || rating) ? ' filled' : ' inactive'}`}
-          style={{ color: i <= (hoverRating || rating) ? '#ffd700' : '#e0e0e0', cursor: 'pointer', fontSize: '1.5rem' }}
-          onClick={() => setCurrentRating(i)}
-          onMouseEnter={() => setHoverRating(i)}
-          onMouseLeave={() => setHoverRating(0)}
+          className={`star${i <= displayRating ? ' filled' : ' inactive'}`}
+          style={{ 
+            color: i <= displayRating ? '#ffd700' : '#e0e0e0', 
+            cursor: isInteractive ? 'pointer' : 'default', 
+            fontSize: '1.5rem' 
+          }}
+          onClick={isInteractive ? () => setCurrentRating(i) : undefined}
+          onMouseEnter={isInteractive ? () => setHoverRating(i) : undefined}
+          onMouseLeave={isInteractive ? () => setHoverRating(0) : undefined}
         >
           ★
         </span>
@@ -506,7 +512,7 @@ const TaskProviderDashboard = () => {
     return (
       <div className="star-rating">
         {stars}
-        <span className="rating-text">{rating > 0 ? `${rating}/5` : 'Not rated'}</span>
+        {!isInteractive && <span className="rating-text">{rating > 0 ? `${rating}/5` : 'Not rated'}</span>}
       </div>
     );
   };
@@ -1056,7 +1062,7 @@ const TaskProviderDashboard = () => {
                             />
                             <div className="applicant-info">
                               <h4>{userData.name || 'Unnamed User'}</h4>
-                              <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                              {/* Don't show receiver's rating to provider */}
                             </div>
                             <div className="applicant-actions">
                               <button
@@ -1168,7 +1174,7 @@ const TaskProviderDashboard = () => {
                         <span>
                           {viewingProfile.rating ? (
                             <>
-                              {viewingProfile.rating} ⭐
+                              {viewingProfile.rating} ★
                               {userData.completedTasks && (
                                 <small> ({userData.completedTasks} tasks completed)</small>
                               )}
@@ -1256,7 +1262,7 @@ const TaskProviderDashboard = () => {
             <h2>Rate Task: {getTaskDisplayTitle(ratingModalTask)}</h2>
             <div className="rating-modal-content">
               <p>Rate the performance for this task:</p>
-              {renderStarRating(currentRating)}
+              {renderStarRating(currentRating, true)}
               <div className="rating-actions">
                 <button 
                   className="primary-button" 
