@@ -1148,43 +1148,14 @@ const TaskProviderDashboard = () => {
                         <label>Name:</label>
                         <span>{userData.name || 'Not available'}</span>
                       </div>
-                      
                       <div className="profile-field">
                         <label>Email:</label>
                         <span>{userData.email || 'Not available'}</span>
                       </div>
-                      
                       <div className="profile-field">
                         <label>Phone:</label>
                         <span>{userData.phone || 'Not available'}</span>
                       </div>
-                      
-                      <div className="profile-field">
-                        <label>Age:</label>
-                        <span>{userData.age || 'Not specified'}</span>
-                      </div>
-                      
-                      <div className="profile-field">
-                        <label>Profession:</label>
-                        <span>{userData.profession || 'Not specified'}</span>
-                      </div>
-                      
-                      <div className="profile-field">
-                        <label>Rating:</label>
-                        <span>
-                          {viewingProfile.rating ? (
-                            <>
-                              {viewingProfile.rating} ★
-                              {userData.completedTasks && (
-                                <small> ({userData.completedTasks} tasks completed)</small>
-                              )}
-                            </>
-                          ) : (
-                            'No rating yet'
-                          )}
-                        </span>
-                      </div>
-                      
                       {userData.skills && userData.skills.length > 0 && (
                         <div className="profile-field">
                           <label>Skills:</label>
@@ -1196,28 +1167,24 @@ const TaskProviderDashboard = () => {
                           </span>
                         </div>
                       )}
-                      
                       {userData.bio && (
                         <div className="profile-field">
                           <label>Bio:</label>
                           <p>{userData.bio}</p>
                         </div>
                       )}
-                      
                       {userData.experience && (
                         <div className="profile-field">
                           <label>Experience:</label>
                           <span>{userData.experience}</span>
                         </div>
                       )}
-                      
                       {userData.location && (
                         <div className="profile-field">
                           <label>Location:</label>
                           <span>{renderLocation(userData.location)}</span>
                         </div>
                       )}
-                      
                       {viewingProfile.appliedAt && (
                         <div className="profile-field">
                           <label>Applied On:</label>
@@ -1230,7 +1197,6 @@ const TaskProviderDashboard = () => {
                           })}</span>
                         </div>
                       )}
-                      
                       {viewingProfile.coverLetter && (
                         <div className="profile-field">
                           <label>Cover Letter:</label>
