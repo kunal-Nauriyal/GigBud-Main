@@ -56,7 +56,7 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3000/api/users/login/request", {
+      const res = await axios.post("https://gigbud-main-3.onrender.com/api/login", {
         email: formData.loginEmail
       });
       
