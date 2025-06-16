@@ -289,7 +289,7 @@ const TaskReceiverDashboard = () => {
 
   const handleGiveRating = (task) => {
     setRatingModalTask(task);
-    setCurrentRating(task.workerRating || task.creatorRating || 0);
+    setCurrentRating(task.workerRating || 0); // Removed task.creatorRating reference
     setHoverRating(0);
   };
 

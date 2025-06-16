@@ -328,7 +328,7 @@ const TaskProviderDashboard = () => {
 
   const handleGiveRating = (task) => {
     setRatingModalTask(task);
-    setCurrentRating(task.creatorRating || task.workerRating || 0);
+    setCurrentRating(0); // Always start with 0, don't pre-fill
     setHoverRating(0);
   };
 
@@ -487,17 +487,23 @@ const TaskProviderDashboard = () => {
     setEditProviderMode(false);
   };
 
-  const renderStarRating = (rating) => {
+  const renderStarRating = (rating, isInteractive = false) => {
     const stars = [];
+    const displayRating = isInteractive ? (hoverRating || currentRating) : rating;
+    
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <span
           key={i}
-          className={`star${i <= (hoverRating || rating) ? ' filled' : ' inactive'}`}
-          style={{ color: i <= (hoverRating || rating) ? '#ffd700' : '#e0e0e0', cursor: 'pointer', fontSize: '1.5rem' }}
-          onClick={() => setCurrentRating(i)}
-          onMouseEnter={() => setHoverRating(i)}
-          onMouseLeave={() => setHoverRating(0)}
+          className={`star${i <= displayRating ? ' filled' : ' inactive'}`}
+          style={{ 
+            color: i <= displayRating ? '#ffd700' : '#e0e0e0', 
+            cursor: isInteractive ? 'pointer' : 'default', 
+            fontSize: '1.5rem' 
+          }}
+          onClick={isInteractive ? () => setCurrentRating(i) : undefined}
+          onMouseEnter={isInteractive ? () => setHoverRating(i) : undefined}
+          onMouseLeave={isInteractive ? () => setHoverRating(0) : undefined}
         >
           ★
         </span>
@@ -506,7 +512,7 @@ const TaskProviderDashboard = () => {
     return (
       <div className="star-rating">
         {stars}
-        <span className="rating-text">{rating > 0 ? `${rating}/5` : 'Not rated'}</span>
+        {!isInteractive && <span className="rating-text">{rating > 0 ? `${rating}/5` : 'Not rated'}</span>}
       </div>
     );
   };
@@ -1056,7 +1062,7 @@ const TaskProviderDashboard = () => {
                             />
                             <div className="applicant-info">
                               <h4>{userData.name || 'Unnamed User'}</h4>
-                              <p>Rating: {applicant.rating || 'No rating'} ⭐</p>
+                              {/* Don't show receiver's rating to provider */}
                             </div>
                             <div className="applicant-actions">
                               <button
@@ -1142,43 +1148,14 @@ const TaskProviderDashboard = () => {
                         <label>Name:</label>
                         <span>{userData.name || 'Not available'}</span>
                       </div>
-                      
                       <div className="profile-field">
                         <label>Email:</label>
                         <span>{userData.email || 'Not available'}</span>
                       </div>
-                      
                       <div className="profile-field">
                         <label>Phone:</label>
                         <span>{userData.phone || 'Not available'}</span>
                       </div>
-                      
-                      <div className="profile-field">
-                        <label>Age:</label>
-                        <span>{userData.age || 'Not specified'}</span>
-                      </div>
-                      
-                      <div className="profile-field">
-                        <label>Profession:</label>
-                        <span>{userData.profession || 'Not specified'}</span>
-                      </div>
-                      
-                      <div className="profile-field">
-                        <label>Rating:</label>
-                        <span>
-                          {viewingProfile.rating ? (
-                            <>
-                              {viewingProfile.rating} ⭐
-                              {userData.completedTasks && (
-                                <small> ({userData.completedTasks} tasks completed)</small>
-                              )}
-                            </>
-                          ) : (
-                            'No rating yet'
-                          )}
-                        </span>
-                      </div>
-                      
                       {userData.skills && userData.skills.length > 0 && (
                         <div className="profile-field">
                           <label>Skills:</label>
@@ -1190,28 +1167,24 @@ const TaskProviderDashboard = () => {
                           </span>
                         </div>
                       )}
-                      
                       {userData.bio && (
                         <div className="profile-field">
                           <label>Bio:</label>
                           <p>{userData.bio}</p>
                         </div>
                       )}
-                      
                       {userData.experience && (
                         <div className="profile-field">
                           <label>Experience:</label>
                           <span>{userData.experience}</span>
                         </div>
                       )}
-                      
                       {userData.location && (
                         <div className="profile-field">
                           <label>Location:</label>
                           <span>{renderLocation(userData.location)}</span>
                         </div>
                       )}
-                      
                       {viewingProfile.appliedAt && (
                         <div className="profile-field">
                           <label>Applied On:</label>
@@ -1224,7 +1197,6 @@ const TaskProviderDashboard = () => {
                           })}</span>
                         </div>
                       )}
-                      
                       {viewingProfile.coverLetter && (
                         <div className="profile-field">
                           <label>Cover Letter:</label>
@@ -1256,7 +1228,7 @@ const TaskProviderDashboard = () => {
             <h2>Rate Task: {getTaskDisplayTitle(ratingModalTask)}</h2>
             <div className="rating-modal-content">
               <p>Rate the performance for this task:</p>
-              {renderStarRating(currentRating)}
+              {renderStarRating(currentRating, true)}
               <div className="rating-actions">
                 <button 
                   className="primary-button" 

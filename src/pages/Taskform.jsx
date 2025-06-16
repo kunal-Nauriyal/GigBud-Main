@@ -108,7 +108,9 @@ const TaskForm = ({ onClose }) => {
         newErrors.deadline = "Deadline must be in the future.";
       }
     }
-    if (!formData.budget || isNaN(formData.budget) || parseFloat(formData.budget) <= 0) {
+    if (!formData.budget?.trim()) {
+      newErrors.budget = "Budget is required.";
+    } else if (isNaN(parseFloat(formData.budget)) || parseFloat(formData.budget) <= 0) {
       newErrors.budget = "Valid budget amount is required.";
     }
     if (formData.location === "In-Person") {
@@ -130,8 +132,11 @@ const TaskForm = ({ onClose }) => {
         newErrors.workLocation = "Location is required for in-person work.";
       }
     }
-    if (!timeBuyerData.budgetPerHour?.trim() || timeBuyerData.budgetPerHour <= 0)
+    if (!timeBuyerData.budgetPerHour?.trim()) {
+      newErrors.budgetPerHour = "Budget is required.";
+    } else if (isNaN(parseFloat(timeBuyerData.budgetPerHour)) || parseFloat(timeBuyerData.budgetPerHour) <= 0) {
       newErrors.budgetPerHour = "Valid budget is required.";
+    }
     setErrors(newErrors);
     setIsFormValid(Object.keys(newErrors).length === 0);
   };
@@ -346,7 +351,7 @@ const TaskForm = ({ onClose }) => {
                       <label htmlFor="budget">Budget (INR) <span className="required">*</span></label>
                       <input
                         id="budget"
-                        type="number"
+                        type="text"
                         name="budget"
                         placeholder="Amount in INR"
                         value={formData.budget}
@@ -469,7 +474,7 @@ const TaskForm = ({ onClose }) => {
                   <div className="form-group">
                     <label>Budget per Hour <span className="required">*</span></label>
                     <input
-                      type="number"
+                      type="text"
                       name="budgetPerHour"
                       placeholder="Enter budget"
                       value={timeBuyerData.budgetPerHour}
