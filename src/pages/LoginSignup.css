@@ -72,7 +72,7 @@
   font-size: 0.9rem;
   color: #8ABAD3;
   margin-top: 5px;
-  margin-left: 31px;
+
   font-weight: 300;
 }
 
@@ -323,7 +323,7 @@ body.modal-open {
 @media screen and (max-width: 480px) {
   .login-box {
     max-width: 90%;
-    padding: 30px 20px;
+        padding: 30px 20px;
   }
   
   .logo {

@@ -35,7 +35,7 @@ function App() {
           handleLogout={logout}
         />
 
-        <main className="content" style={{ paddingTop: "70px" }}>
+        <main className="content" style={{ paddingTop: "39px" }}>
           <Routes>
             <Route path="/" element={<Home openLoginModal={openLoginModal} />} />
             <Route path="/about" element={<About />} />

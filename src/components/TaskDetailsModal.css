@@ -10,6 +10,7 @@
   align-items: center;
   z-index: 1000;
   padding: 1rem;
+  padding-top: 70px;
 }
 
 .modal-content {
@@ -229,6 +230,7 @@
   .modal-content {
     max-width: 100%;
     margin: 1rem;
+    padding-top: 70px;
   }
 
   .detail-grid {

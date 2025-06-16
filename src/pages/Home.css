@@ -3,6 +3,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  padding-top: 39px;
 }
 
 /* Define variables */
@@ -91,9 +92,12 @@ body {
   transition: all 0.3s ease-in-out;
 }
 p.tagline {
-    font-size: 1.5rem;
-    margin-left: 32rem;
-    margin-top: 0px;
+  font-size: 1.5rem;
+  /* margin-left: 32rem; */
+  justify-content: center;
+  margin-top: 0px;
+  align-items: center;
+  text-align: center;
 }
 
 .tagline:hover {
@@ -216,7 +220,11 @@ p.tagline {
   .tagline {
     font-size: 2rem;
     max-width: 90%;
+    font-weight: bolder;
     padding: 12px 20px;
+    padding-top: 120px;
+    display: none;
+   
   }
 
   .hero-buttons {
