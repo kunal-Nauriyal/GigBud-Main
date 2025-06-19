@@ -370,21 +370,22 @@ function LoginModal({ isOpen, onClose }) {
                     {loading ? "Sending..." : "Generate OTP"}
                   </button>
                   
-                  <div className="social-login">
-                    <p>Or continue with</p>
-                    <div className="google-login-container">
-                      <GoogleLogin
-                        onSuccess={handleGoogleLoginSuccess}
-                        onError={handleGoogleLoginError}
-                        useOneTap
-                        theme="filled_blue"
-                        shape="rectangular"
-                        text="signin_with"
-                        size="large"
-                        width="100%"
-                      />
-                    </div>
-                  </div>
+                 <div className="social-login">
+  <p>Or continue with</p>
+  <div className="google-login-container">
+    <button
+      className="btn google-auth-btn"
+      type="button"
+      onClick={() => {
+        window.location.href = `${process.env.REACT_APP_BACKEND_URL}/auth/google`;
+      }}
+      disabled={loading}
+    >
+      Sign in with Google
+    </button>
+  </div>
+</div>
+
                 </>
               )
             ) : (
