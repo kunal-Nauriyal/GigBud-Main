@@ -56,7 +56,8 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("https://gigbud-main-10.onrender.com/api/login", {
+      const res = await axios.post("GOOGLE_CALLBACK_URL=https://gigbud-testing2.netlify.app/auth/google/callback
+", {
         email: formData.loginEmail
       });
       
