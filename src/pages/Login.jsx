@@ -56,7 +56,7 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("GOOGLE_CALLBACK_URL=https://gigbud-testing2.netlify.app/auth/google/callback
+      const res = await axios.post("GOOGLE_CALLBACK_URL=https://gigbud-testing-111.netlify.app/auth/google/callback
 ", {
         email: formData.loginEmail
       });
@@ -82,7 +82,7 @@ function LoginModal({ isOpen, onClose }) {
     setLoading(true);
     
     try {
-      const res = await axios.post("http://localhost:3000/api/users/login/verify", {
+      const res = await axios.post("https://gigbud-testing-111.netlify.app/api/users/login/verify", {
         email: otpEmail,
         otp: otp
       });
@@ -123,7 +123,7 @@ function LoginModal({ isOpen, onClose }) {
 
       // This part is kept for form submission handling but the button is hidden
       try {
-        const res = await fetch("http://localhost:3000/api/auth/login", {
+        const res = await fetch("https://gigbud-testing-111.netlify.app/api/auth/login", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -184,7 +184,7 @@ function LoginModal({ isOpen, onClose }) {
       }
 
       try {
-        const res = await fetch("http://localhost:3000/api/auth/register", {
+        const res = await fetch("https://gigbud-testing-111.netlify.app/api/auth/register", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -237,7 +237,7 @@ function LoginModal({ isOpen, onClose }) {
   const handleGoogleLoginSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/google-login", {
+      const res = await fetch("https://gigbud-testing-111.netlify.app/api/auth/google-login", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
