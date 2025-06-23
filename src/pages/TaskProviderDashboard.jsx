@@ -8,6 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
+// API Base URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
 const DEFAULT_PROFILE_IMAGE = 'https://img.freepik.com/premium-vector/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-vector-illustration_561158-3383.jpg?w=360';
 
 const TaskProviderDashboard = () => {
@@ -177,7 +180,7 @@ const TaskProviderDashboard = () => {
       if (!token) {
         throw new Error('No access token found');
       }
-      const res = await axios.get('http://localhost:3000/api/users/me', {
+      const res = await axios.get(`${API_BASE_URL}/users/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -455,7 +458,7 @@ const TaskProviderDashboard = () => {
       };
 
       const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      const response = await axios.put('http://localhost:3000/api/users/me', updated, {
+      const response = await axios.put(`${API_BASE_URL}/users/me`, updated, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

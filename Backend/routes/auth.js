@@ -168,45 +168,56 @@ router.post('/register', async (req, res) => {
 
 // Google login endpoint
 router.post('/google-login', async (req, res) => {
+  console.log('Google login endpoint hit');
+  console.log('Request origin:', req.get('origin'));
+  console.log('Request headers:', req.headers);
+
   try {
     const { token } = req.body;
+    console.log('Received token:', token ? 'Token present' : 'No token');
 
     if (!token) {
-      return res.status(400).json({ 
+      console.log('No token provided in request body');
+      return res.status(400).json({
         success: false,
-        message: 'Google token is required' 
+        message: 'Google token is required'
       });
     }
 
     // Verify the Google token
+    console.log('Verifying Google token with client ID:', process.env.GOOGLE_CLIENT_ID);
     let ticket;
     try {
       ticket = await client.verifyIdToken({
         idToken: token,
         audience: process.env.GOOGLE_CLIENT_ID
       });
+      console.log('Google token verification successful');
     } catch (verifyError) {
-      console.error('Google token verification failed:', verifyError);
-      return res.status(401).json({ 
+      console.error('Google token verification failed:', verifyError.message);
+      return res.status(401).json({
         success: false,
-        message: 'Invalid Google token' 
+        message: 'Invalid Google token: ' + verifyError.message
       });
     }
 
     const payload = ticket.getPayload();
     const { email, name, picture, email_verified } = payload;
+    console.log('Google user payload:', { email, name, email_verified });
 
     if (!email) {
-      return res.status(400).json({ 
+      console.log('No email in Google payload');
+      return res.status(400).json({
         success: false,
-        message: 'Email not provided by Google' 
+        message: 'Email not provided by Google'
       });
     }
 
     if (!email_verified) {
-      return res.status(400).json({ 
+      console.log('Google email not verified for:', email);
+      return res.status(400).json({
         success: false,
-        message: 'Google email not verified' 
+        message: 'Google email not verified'
       });
     }
 

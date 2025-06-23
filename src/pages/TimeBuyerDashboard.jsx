@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./TimeBuyerDashboard.css";
 import BuyingTimeForm from "./BuyingTimeForm";
 
-const API_BASE_URL = "http://localhost:3000/api/tasks";
+// Use environment variable for API base URL
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/tasks`;
 
 const TimeBuyerDashboard = () => {
   const [bookings, setBookings] = useState([]);

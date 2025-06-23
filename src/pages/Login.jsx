@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 
+// API Base URL from environment or fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
 function LoginModal({ isOpen, onClose }) {
   const [isLoginForm, setIsLoginForm] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
@@ -56,8 +59,8 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("GOOGLE_CALLBACK_URL=https://gigbud-testing-111.netlify.app/auth/google/callback
-", {
+      // Fix: Use the correct API endpoint for sending OTP
+      const res = await axios.post(`${API_BASE_URL}/users/login/otp`, {
         email: formData.loginEmail
       });
       
@@ -82,7 +85,7 @@ function LoginModal({ isOpen, onClose }) {
     setLoading(true);
     
     try {
-      const res = await axios.post("https://gigbud-testing-111.netlify.app/api/users/login/verify", {
+      const res = await axios.post(`${API_BASE_URL}/users/login/verify`, {
         email: otpEmail,
         otp: otp
       });
@@ -123,9 +126,9 @@ function LoginModal({ isOpen, onClose }) {
 
       // This part is kept for form submission handling but the button is hidden
       try {
-        const res = await fetch("https://gigbud-testing-111.netlify.app/api/auth/login", {
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "Accept": "application/json"
           },
@@ -184,9 +187,9 @@ function LoginModal({ isOpen, onClose }) {
       }
 
       try {
-        const res = await fetch("https://gigbud-testing-111.netlify.app/api/auth/register", {
+        const res = await fetch(`${API_BASE_URL}/auth/register`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "Accept": "application/json"
           },
@@ -235,11 +238,16 @@ function LoginModal({ isOpen, onClose }) {
   };
 
   const handleGoogleLoginSuccess = async (credentialResponse) => {
+
     setLoading(true);
     try {
-      const res = await fetch("https://gigbud-testing-111.netlify.app/api/auth/google-login", {
+      if (!credentialResponse?.credential) {
+        throw new Error('No credential received from Google');
+      }
+
+      const res = await fetch(`${API_BASE_URL}/auth/google-login`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
@@ -249,22 +257,30 @@ function LoginModal({ isOpen, onClose }) {
 
       if (!res.ok) {
         const errorText = await res.text();
+        console.error('API error response:', errorText);
+
         let errorMessage = "Google login failed";
-        
+
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
         } catch {
-          console.error("Server returned HTML instead of JSON:", errorText);
-          errorMessage = "Server error - please check if the backend is running";
+          console.error("Server returned non-JSON response:", errorText);
+          if (res.status === 0 || res.status >= 500) {
+            errorMessage = "Server is not responding. Please check if the backend is running.";
+          } else if (res.status === 404) {
+            errorMessage = "Google login endpoint not found. Please check the API configuration.";
+          } else {
+            errorMessage = `Server error (${res.status}). Please try again.`;
+          }
         }
-        
+
         alert(errorMessage);
         return;
       }
 
       const data = await res.json();
-      
+
       // Check if OTP was sent (new flow)
       if (data.success && data.email) {
         setOtpEmail(data.email);
@@ -276,8 +292,9 @@ function LoginModal({ isOpen, onClose }) {
 
       // Fallback for old flow
       const accessToken = data?.token || data?.data?.accessToken;
-      
+
       if (!accessToken) {
+        console.error('No access token in response:', data);
         alert("Missing access token from Google login");
         return;
       }
@@ -286,18 +303,39 @@ function LoginModal({ isOpen, onClose }) {
       alert("Google login successful!");
       onClose();
       navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
-      
+
     } catch (error) {
       console.error("Google login error:", error);
-      alert("Google login error: " + (error.message || "Network error"));
+
+      let errorMessage = "Google login failed";
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = "Network error. Please check your internet connection and ensure the backend server is running.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert("Google login error: " + errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLoginError = () => {
-    console.error("Google login failed");
-    alert("Google login failed. Please try again or use email login.");
+  const handleGoogleLoginError = (error) => {
+    console.error("Google login failed:", error);
+
+    let errorMessage = "Google login failed. Please try again or use email login.";
+
+    if (error) {
+      if (error.error === 'popup_closed_by_user') {
+        errorMessage = "Google login was cancelled. Please try again.";
+      } else if (error.error === 'access_denied') {
+        errorMessage = "Google login access was denied. Please try again.";
+      } else if (error.error === 'invalid_client') {
+        errorMessage = "Google OAuth configuration error. Please contact support.";
+      }
+    }
+
+    alert(errorMessage);
   };
 
   if (!isOpen) return null;
@@ -373,16 +411,17 @@ function LoginModal({ isOpen, onClose }) {
                  <div className="social-login">
   <p>Or continue with</p>
   <div className="google-login-container">
-    <button
-      className="btn google-auth-btn"
-      type="button"
-      onClick={() => {
-        window.location.href = `${process.env.REACT_APP_BACKEND_URL}/auth/google`;
-      }}
-      disabled={loading}
-    >
-      Sign in with Google
-    </button>
+    <GoogleLogin
+      onSuccess={handleGoogleLoginSuccess}
+      onError={handleGoogleLoginError}
+      useOneTap={false}
+      theme="filled_blue"
+      text="signin_with"
+      shape="rectangular"
+      size="large"
+      auto_select={false}
+      cancel_on_tap_outside={true}
+    />
   </div>
 </div>
 

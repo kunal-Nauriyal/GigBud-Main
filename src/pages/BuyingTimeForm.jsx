@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./BuyingTimeForm.css";
 
+// API Base URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
 const BuyingTimeForm = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: "",
@@ -97,7 +100,7 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
     try {
       setLoading(true);
       // 1. Create the task
-      const createRes = await fetch("http://localhost:3000/api/tasks/task/create", {
+      const createRes = await fetch(`${API_BASE_URL}/tasks/task/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +121,7 @@ const BuyingTimeForm = ({ onClose, onSubmit }) => {
 
       // 2. Accept the task
       const taskId = createData.data._id;
-      const acceptRes = await fetch(`http://localhost:3000/api/tasks/task/accept/${taskId}`, {
+      const acceptRes = await fetch(`${API_BASE_URL}/tasks/task/accept/${taskId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

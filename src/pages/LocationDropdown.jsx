@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+// API Base URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
 function LocationDropdown({ value = '', onChange, onSelect }) {
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -9,7 +12,7 @@ function LocationDropdown({ value = '', onChange, onSelect }) {
     const delayDebounce = setTimeout(() => {
       if (value.trim()) {
         axios
-          .get(`http://localhost:3000/api/location/search?q=${encodeURIComponent(value.trim())}`)
+          .get(`${API_BASE_URL}/location/search?q=${encodeURIComponent(value.trim())}`)
           .then((res) => {
             console.log('✅ Location results:', res.data?.data);
             setResults(res.data?.data || []);
