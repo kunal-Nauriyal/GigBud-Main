@@ -20,8 +20,6 @@ function LoginModal({ isOpen, onClose }) {
   const [otpSent, setOtpSent] = useState(false);
 
   const [formData, setFormData] = useState({
-    loginEmail: '',
-    loginPassword: '',
     signupName: '',
     signupEmail: '',
     signupPassword: '',
@@ -43,37 +41,11 @@ function LoginModal({ isOpen, onClose }) {
     setIsLoginForm(!isLoginForm);
     setShowOtpForm(false);
     setFormData({
-      loginEmail: '',
-      loginPassword: '',
       signupName: '',
       signupEmail: '',
       signupPassword: '',
       signupConfirmPassword: ''
     });
-  };
-
-  const handleSendOtp = async () => {
-    setLoading(true);
-    try {
-      // ✅ Fixed OTP request endpoint
-      const res = await axios.post(`${API_BASE_URL}/users/login/request`, {
-        email: formData.loginEmail
-      });
-
-      if (res.data.success) {
-        setOtpEmail(formData.loginEmail);
-        setOtpSent(true);
-        setShowOtpForm(true);
-        alert("OTP sent to your email!");
-      } else {
-        alert(res.data.message || "Failed to send OTP");
-      }
-    } catch (err) {
-      console.error("OTP send error:", err);
-      alert(err.response?.data?.message || "Failed to send OTP");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleOtpLogin = async (e) => {
@@ -117,51 +89,6 @@ function LoginModal({ isOpen, onClose }) {
       if (showOtpForm) {
         await handleOtpLogin(e);
         return;
-      }
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            email: formData.loginEmail,
-            password: formData.loginPassword,
-          }),
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          let errorMessage = "Login failed";
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.message || errorMessage;
-          } catch {
-            errorMessage = "Server error - please check if the backend is running";
-          }
-          alert(errorMessage);
-          return;
-        }
-
-        const data = await res.json();
-        const accessToken = data?.data?.accessToken || data?.token;
-        if (!accessToken) {
-          alert("Missing access token in response");
-          return;
-        }
-
-        await login(accessToken, rememberMe);
-        alert("Login successful!");
-        onClose();
-        navigate(userRole === 'provider' ? "/task-provider-dashboard" : "/task-receiver-dashboard");
-      } catch (err) {
-        console.error("Login error:", err);
-        alert("Login error: " + (err.message || "Network error"));
-      } finally {
-        setLoading(false);
       }
     } else {
       // Signup Flow
@@ -209,8 +136,6 @@ function LoginModal({ isOpen, onClose }) {
         alert("Signup successful! Please log in.");
         setIsLoginForm(true);
         setFormData({
-          loginEmail: formData.signupEmail,
-          loginPassword: '',
           signupName: '',
           signupEmail: '',
           signupPassword: '',
@@ -330,44 +255,23 @@ function LoginModal({ isOpen, onClose }) {
                 </>
               ) : (
                 <>
-                  <div className="input-group">
-                    <label htmlFor="login-email">Email</label>
-                    <input
-                      type="email"
-                      id="login-email"
-                      name="loginEmail"
-                      className="input-field"
-                      placeholder="Enter your email"
-                      value={formData.loginEmail}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
+                  <div className="google-login-container">
+                    <GoogleLogin
+                      onSuccess={handleGoogleLoginSuccess}
+                      onError={handleGoogleLoginError}
+                      useOneTap={false}
+                      theme="filled_blue"
+                      text="signin_with"
+                      shape="rectangular"
+                      size="large"
+                      auto_select={false}
+                      cancel_on_tap_outside={true}
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={handleSendOtp}
-                    disabled={loading || !formData.loginEmail}
-                  >
-                    {loading ? "Sending..." : "Generate OTP"}
-                  </button>
-
-                  <div className="social-login">
-                    <p>Or continue with</p>
-                    <div className="google-login-container">
-                      <GoogleLogin
-                        onSuccess={handleGoogleLoginSuccess}
-                        onError={handleGoogleLoginError}
-                        useOneTap={false}
-                        theme="filled_blue"
-                        text="signin_with"
-                        shape="rectangular"
-                        size="large"
-                        auto_select={false}
-                        cancel_on_tap_outside={true}
-                      />
-                    </div>
+                  
+                  <div className="switch-form">
+                    <span>Don't have an account?</span>
+                    <a href="#" onClick={toggleForm}>Sign Up</a>
                   </div>
                 </>
               )
