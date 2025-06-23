@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 
-// API Base URL from environment or fallback
+// ✅ Correct API base URL fallback
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 function LoginModal({ isOpen, onClose }) {
@@ -19,15 +19,6 @@ function LoginModal({ isOpen, onClose }) {
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add('modal-open');
-    } else {
-      document.body.classList.remove('modal-open');
-    }
-    return () => document.body.classList.remove('modal-open');
-  }, [isOpen]);
-
   const [formData, setFormData] = useState({
     loginEmail: '',
     loginPassword: '',
@@ -36,6 +27,11 @@ function LoginModal({ isOpen, onClose }) {
     signupPassword: '',
     signupConfirmPassword: ''
   });
+
+  useEffect(() => {
+    document.body.classList.toggle('modal-open', isOpen);
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,11 +55,11 @@ function LoginModal({ isOpen, onClose }) {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      // Fix: Use the correct API endpoint for sending OTP
-      const res = await axios.post(`${API_BASE_URL}/users/login/otp`, {
+      // ✅ Fixed OTP request endpoint
+      const res = await axios.post(`${API_BASE_URL}/users/login/request`, {
         email: formData.loginEmail
       });
-      
+
       if (res.data.success) {
         setOtpEmail(formData.loginEmail);
         setOtpSent(true);
@@ -83,7 +79,7 @@ function LoginModal({ isOpen, onClose }) {
   const handleOtpLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const res = await axios.post(`${API_BASE_URL}/users/login/verify`, {
         email: otpEmail,
@@ -96,7 +92,6 @@ function LoginModal({ isOpen, onClose }) {
       }
 
       const accessToken = res.data?.data?.accessToken || res.data?.token;
-      
       if (!accessToken) {
         alert("Missing access token in response");
         return;
@@ -124,7 +119,6 @@ function LoginModal({ isOpen, onClose }) {
         return;
       }
 
-      // This part is kept for form submission handling but the button is hidden
       try {
         const res = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
@@ -142,22 +136,18 @@ function LoginModal({ isOpen, onClose }) {
         if (!res.ok) {
           const errorText = await res.text();
           let errorMessage = "Login failed";
-          
           try {
             const errorData = JSON.parse(errorText);
             errorMessage = errorData.message || errorMessage;
           } catch {
-            console.error("Server returned HTML instead of JSON:", errorText);
             errorMessage = "Server error - please check if the backend is running";
           }
-          
           alert(errorMessage);
           return;
         }
 
         const data = await res.json();
         const accessToken = data?.data?.accessToken || data?.token;
-        
         if (!accessToken) {
           alert("Missing access token in response");
           return;
@@ -174,6 +164,7 @@ function LoginModal({ isOpen, onClose }) {
         setLoading(false);
       }
     } else {
+      // Signup Flow
       if (formData.signupPassword !== formData.signupConfirmPassword) {
         alert("Passwords don't match!");
         setLoading(false);
@@ -204,15 +195,12 @@ function LoginModal({ isOpen, onClose }) {
         if (!res.ok) {
           const errorText = await res.text();
           let errorMessage = "Signup failed";
-          
           try {
             const errorData = JSON.parse(errorText);
             errorMessage = errorData.message || errorMessage;
           } catch {
-            console.error("Server returned HTML instead of JSON:", errorText);
             errorMessage = "Server error - please check if the backend is running";
           }
-          
           alert(errorMessage);
           return;
         }
@@ -238,7 +226,6 @@ function LoginModal({ isOpen, onClose }) {
   };
 
   const handleGoogleLoginSuccess = async (credentialResponse) => {
-
     setLoading(true);
     try {
       if (!credentialResponse?.credential) {
@@ -258,44 +245,23 @@ function LoginModal({ isOpen, onClose }) {
       if (!res.ok) {
         const errorText = await res.text();
         console.error('API error response:', errorText);
-
-        let errorMessage = "Google login failed";
-
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          console.error("Server returned non-JSON response:", errorText);
-          if (res.status === 0 || res.status >= 500) {
-            errorMessage = "Server is not responding. Please check if the backend is running.";
-          } else if (res.status === 404) {
-            errorMessage = "Google login endpoint not found. Please check the API configuration.";
-          } else {
-            errorMessage = `Server error (${res.status}). Please try again.`;
-          }
-        }
-
-        alert(errorMessage);
+        alert("Google login failed");
         return;
       }
 
       const data = await res.json();
 
-      // Check if OTP was sent (new flow)
       if (data.success && data.email) {
         setOtpEmail(data.email);
         setOtpSent(true);
         setShowOtpForm(true);
-        alert(`OTP sent to ${data.email}! Please check your email and enter the verification code.`);
+        alert(`OTP sent to ${data.email}`);
         return;
       }
 
-      // Fallback for old flow
       const accessToken = data?.token || data?.data?.accessToken;
-
       if (!accessToken) {
-        console.error('No access token in response:', data);
-        alert("Missing access token from Google login");
+        alert("Missing access token");
         return;
       }
 
@@ -306,15 +272,7 @@ function LoginModal({ isOpen, onClose }) {
 
     } catch (error) {
       console.error("Google login error:", error);
-
-      let errorMessage = "Google login failed";
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = "Network error. Please check your internet connection and ensure the backend server is running.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      alert("Google login error: " + errorMessage);
+      alert("Google login error");
     } finally {
       setLoading(false);
     }
@@ -322,20 +280,7 @@ function LoginModal({ isOpen, onClose }) {
 
   const handleGoogleLoginError = (error) => {
     console.error("Google login failed:", error);
-
-    let errorMessage = "Google login failed. Please try again or use email login.";
-
-    if (error) {
-      if (error.error === 'popup_closed_by_user') {
-        errorMessage = "Google login was cancelled. Please try again.";
-      } else if (error.error === 'access_denied') {
-        errorMessage = "Google login access was denied. Please try again.";
-      } else if (error.error === 'invalid_client') {
-        errorMessage = "Google OAuth configuration error. Please contact support.";
-      }
-    }
-
-    alert(errorMessage);
+    alert("Google login failed. Try again.");
   };
 
   if (!isOpen) return null;
@@ -370,9 +315,9 @@ function LoginModal({ isOpen, onClose }) {
                   <button type="submit" className="btn" disabled={loading}>
                     {loading ? "Verifying..." : "Verify OTP"}
                   </button>
-                  <button 
-                    type="button" 
-                    className="btn secondary" 
+                  <button
+                    type="button"
+                    className="btn secondary"
                     onClick={() => {
                       setShowOtpForm(false);
                       setOtp('');
@@ -399,32 +344,31 @@ function LoginModal({ isOpen, onClose }) {
                       disabled={loading}
                     />
                   </div>
-                  <button 
-                    type="button" 
-                    className="btn" 
+                  <button
+                    type="button"
+                    className="btn"
                     onClick={handleSendOtp}
                     disabled={loading || !formData.loginEmail}
                   >
                     {loading ? "Sending..." : "Generate OTP"}
                   </button>
-                  
-                 <div className="social-login">
-  <p>Or continue with</p>
-  <div className="google-login-container">
-    <GoogleLogin
-      onSuccess={handleGoogleLoginSuccess}
-      onError={handleGoogleLoginError}
-      useOneTap={false}
-      theme="filled_blue"
-      text="signin_with"
-      shape="rectangular"
-      size="large"
-      auto_select={false}
-      cancel_on_tap_outside={true}
-    />
-  </div>
-</div>
 
+                  <div className="social-login">
+                    <p>Or continue with</p>
+                    <div className="google-login-container">
+                      <GoogleLogin
+                        onSuccess={handleGoogleLoginSuccess}
+                        onError={handleGoogleLoginError}
+                        useOneTap={false}
+                        theme="filled_blue"
+                        text="signin_with"
+                        shape="rectangular"
+                        size="large"
+                        auto_select={false}
+                        cancel_on_tap_outside={true}
+                      />
+                    </div>
+                  </div>
                 </>
               )
             ) : (
