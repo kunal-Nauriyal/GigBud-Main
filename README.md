@@ -1,1 +1,1 @@
-# gigbud-front
+# HireByte-front
